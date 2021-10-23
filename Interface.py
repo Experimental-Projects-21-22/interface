@@ -1,4 +1,6 @@
+# Generic code with which the arduino's can be controlled
 import serial
+import numpy as np
 
 
 class Arduino:
@@ -29,26 +31,33 @@ class Coincidence(Arduino):
     # Class to control the chips on the coincidence circuit
     def clear(self):
         # Clears the counter chips
-        self.write_serial('CLEAR')
+        self.write_serial('CLEAR'.encode())
 
     def save(self):
         # Saves the counts to the registers
-        self.write_serial('SAVE')
+        self.write_serial('SAVE'.encode())
 
     def read(self):
         # Measures the counts from the registers
-        self.write_serial('READ')
+        self.write_serial('READ'.encode())
         return self.read_serial()
 
-    def save_measure(self):
+    def save_read(self):
         # Saves the counts to the registers and immediately measures them
         self.save()
         self.read()
         return self.read_serial()
 
+    def increment(self, steps, lines_bool):
+        # Increases the delay by a specified amount of steps for the lines specified in lines_bool
+        lines = np.array(['D0', 'D1', 'D2', 'D3']) * np.array(lines_bool)
+        for line in lines:
+            self.write_serial((line+'TBD').encode())
+
 
 class Stepper(Arduino):
     # Class to control the stepper motor
     def rotate(self, angle):
+        
         # Rotates the stepper motor to a specified angle
         pass
