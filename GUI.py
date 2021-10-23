@@ -1,7 +1,7 @@
 # A probably unnecessary GUI for the interface code
 
 import tkinter as tk
-import Interface as Inf
+import interface as Inf
 from tkinter import messagebox
 
 # Create fake serial port for testing
@@ -50,10 +50,10 @@ def coincidence_window():
     delay_lab = tk.Label(new_window, text='Delay line commands', font='Helvetica 18 bold')
 
     # Create buttons for all counter commands
-    clear_but = tk.Button(new_window, text='Clear counter chips', command=Coinc.clear)
-    save_but = tk.Button(new_window, text='Save counts to registers', command=Coinc.save)
-    read_but = tk.Button(new_window, text='Read counter registers', command=Coinc.read)
-    save_read_but = tk.Button(new_window, text='Save and read counter chips', command=Coinc.save_read)
+    clear_but = tk.Button(new_window, text='Clear counter chips', command=Coinc.clear_counters)
+    save_but = tk.Button(new_window, text='Save counts to registers', command=Coinc.save_counts_to_register)
+    read_but = tk.Button(new_window, text='Read counter registers', command=Coinc.read_counts_from_register)
+    save_read_but = tk.Button(new_window, text='Save and read_counts_from_register counter chips', command=Coinc.save_and_read_counts)
 
     # Create buttons for delay line commands
     check_lab = tk.Label(new_window, text='On which delay lines should the command be performed?', font='Helvetica 12 '

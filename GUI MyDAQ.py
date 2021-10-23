@@ -216,7 +216,7 @@ def read_button():
         plot = bool(plot_var.get())
         two = bool(two_var.get())
 
-        md.read(rate, samp, time, data, plot, two)
+        md.read_counts_from_register(rate, samp, time, data, plot, two)
     except(ValueError):
         print('Vul correcte waarden in a.u.b.')
 
