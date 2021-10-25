@@ -18,8 +18,8 @@ COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
 
 class Arduino(Serial):
     """
-    An interface to an Arduino. Behaves almost identical to the Serial class of pyserial. Currently the only difference
-    is that this class will automatically encode a str when passed to the write method.
+    An interface to an Arduino. Behaves almost identical to the Serial class of pyserial. However, it overwrites some
+    methods that make it easier to work with the Arduino.
     """
 
     ARDUINO_EOL = b'\r\n'
