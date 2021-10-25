@@ -8,6 +8,7 @@ Written by:
 import re
 from typing import List, Tuple
 
+from loguru import logger
 from serial import Serial
 
 DELAY_LINES: List[str] = ['CA', 'WA', 'CB', 'WB']
@@ -45,7 +46,10 @@ class Arduino(Serial):
         :return: a str containing all text up to (excluding) the newline characters.
         """
         message = super().readline(**kwargs)
-        return message.rstrip(self.ARDUINO_EOL).decode()
+        message = message.rstrip(self.ARDUINO_EOL).decode()
+
+        logger.info(message)
+        return message
 
     def find_pattern(self, pattern: re.Pattern) -> re.Match:
         """
