@@ -37,6 +37,12 @@ class Coincidence(Arduino):
     Class to control the coincidence circuit. This consists of the delay lines as well as the counters.
     """
 
+    def toggle_verbose(self):
+        """
+        Turns verbose mode on or off on the Arduino.
+        """
+        self.write('VERB')
+
     def clear_counters(self):
         """
         Clears all the counts on the counters. Note that the registers remain unaffected.
