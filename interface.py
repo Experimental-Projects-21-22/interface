@@ -64,9 +64,6 @@ class Arduino(Serial):
             if match:
                 return match
 
-    def __del__(self):
-        self.close()
-
 
 class Coincidence(Arduino):
     """
