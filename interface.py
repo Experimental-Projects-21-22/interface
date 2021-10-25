@@ -5,19 +5,24 @@ Written by:
     Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
     Douwe Remmelts <remmeltsdouwe@gmail.com>
 """
-from typing import List
+import re
+from re import Pattern
+from typing import List, Tuple
 
 from serial import Serial
 
 DELAY_LINES: List[str] = ['CA', 'WA', 'CB', 'WB']
 
+COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
+
 
 class Arduino(Serial):
     """
     An interface to an Arduino. Behaves almost identical to the Serial class of pyserial. Currently the only difference
-    is that this class will automatically encode a str when passed to the write method. Object should be instantiated
-    (or is recommended to be done so) using a with statement.
+    is that this class will automatically encode a str when passed to the write method.
     """
+
+    ARDUINO_EOL = b'\r\n'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -30,6 +35,29 @@ class Arduino(Serial):
             super().write(data.encode())
         else:
             super().write(data)
+
+    def readline(self, **kwargs) -> str:
+        """
+        Performs a super call to readline. This function reads until it encounters a '\n'. However, since the Arduino
+        uses '\r\n' as its EOL character we want to strip both of these. For ease of use this function will
+        automatically decode the bytes.
+
+        :param kwargs: optional characters to pass to the super call.
+        :return: a str containing all text up to (excluding) the newline characters.
+        """
+        message = super().readline(**kwargs)
+        return message.rstrip(self.ARDUINO_EOL).decode()
+
+    def find_pattern(self, pattern: Pattern) -> re.Match:
+        while True:
+            message = self.readline()
+            match = pattern.fullmatch(message)
+
+            if match:
+                return match
+
+    def __del__(self):
+        self.close()
 
 
 class Coincidence(Arduino):
@@ -55,21 +83,22 @@ class Coincidence(Arduino):
         """
         self.write('SAVE')
 
-    def read_counts_from_register(self):
+    def read_counts_from_register(self) -> Tuple[int, ...]:
         """
         Reads the counts from the registers of the counter chips.
         :return:
         """
         self.write('READ')
-        return self.read()
+        match = self.find_pattern(COUNTER_REGEX)
+        counts = tuple([int(x) for x in match.group(1, 2, 3)])
+        return counts
 
-    def save_and_read_counts(self):
+    def save_and_read_counts(self) -> Tuple[int, ...]:
         """
         Combines save_counts_to_register with read_counts_from_register. See their docstrings.
         """
         self.save_counts_to_register()
-        self.read_counts_from_register()
-        return self.read()
+        return self.read_counts_from_register()
 
     def set_delay(self, delay: int, delay_line: str):
         """
@@ -77,7 +106,7 @@ class Coincidence(Arduino):
         :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
         """
         assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.write(delay.to_bytes(length=8, byteorder='little', signed=False))
+        self.write(str(delay))
         self.write('SD' + delay_line)
 
     def increment_delay(self, delay: int, delay_line: str):
@@ -86,7 +115,7 @@ class Coincidence(Arduino):
         :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
         """
         assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.write(delay.to_bytes(length=8, byteorder='little', signed=False))
+        self.write(str(delay))
         self.write('ID' + delay_line)
 
     def decrement_delay(self, delay: int, delay_line: str):
@@ -95,7 +124,7 @@ class Coincidence(Arduino):
         :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
         """
         assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.write(delay.to_bytes(length=8, byteorder='little', signed=False))
+        self.write(str(delay))
         self.write('DD' + delay_line)
 
 
