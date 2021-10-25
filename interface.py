@@ -6,7 +6,6 @@ Written by:
     Douwe Remmelts <remmeltsdouwe@gmail.com>
 """
 import re
-from re import Pattern
 from typing import List, Tuple
 
 from serial import Serial
@@ -48,7 +47,12 @@ class Arduino(Serial):
         message = super().readline(**kwargs)
         return message.rstrip(self.ARDUINO_EOL).decode()
 
-    def find_pattern(self, pattern: Pattern) -> re.Match:
+    def find_pattern(self, pattern: re.Pattern) -> re.Match:
+        """
+        Reads lines until it finds a line that matches the specified pattern.
+        :param pattern: the pattern to match the lines against.
+        :return: a match to the pattern.
+        """
         while True:
             message = self.readline()
             match = pattern.fullmatch(message)
