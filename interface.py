@@ -14,6 +14,7 @@ from serial import Serial
 DELAY_LINES: List[str] = ['CA', 'WA', 'CB', 'WB']
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
+DELAY_REGEX = re.compile(r'(\d+)')
 
 
 class Arduino(Serial):
@@ -91,7 +92,7 @@ class Coincidence(Arduino):
     def read_counts_from_register(self) -> Tuple[int, ...]:
         """
         Reads the counts from the registers of the counter chips.
-        :return:
+        :return: a tuple with the count on each counter.
         """
         self.write('READ')
         match = self.find_pattern(COUNTER_REGEX)
@@ -131,6 +132,16 @@ class Coincidence(Arduino):
         assert delay_line in DELAY_LINES, "Invalid delay line specified"
         self.write(str(delay))
         self.write('DD' + delay_line)
+
+    def get_delay(self, delay_line: str) -> int:
+        """
+        Gets the delay of the specified delay line to the specified value.
+        :return: the delay as an integer where delay * 0.25ns is the actual delay.
+        """
+        assert delay_line in DELAY_LINES, "Invalid delay line specified"
+        match = self.find_pattern(DELAY_REGEX)
+        delay = int(match.group(1))
+        return delay
 
 
 class Stepper(Arduino):
