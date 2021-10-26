@@ -31,6 +31,8 @@ class Arduino(Serial):
         super().__init__(*args, **kwargs)
         self.name = name
 
+        logger.info(f"Serial interface to the {self.name} initialized.")
+
     def send_command(self, command):
         """
         Identical to the write method of Serial, however this method will automatically encode the data if it is a str
@@ -38,12 +40,21 @@ class Arduino(Serial):
         two concatenated strings if commands are rapidly sent after each other.
         """
         if not isinstance(command, str):
-            logger.info(f"Automatically converting command from {type(command).__name__} to str.")
+            logger.warning(f"Automatically converting command from {type(command).__name__} to str.")
             command = str(command)
         if not command.endswith('\n'):
             logger.debug("Appending a newline (\\n) to command.")
             command += '\n'
+        logger.info(f"Sending the following command to the {self.name}: {command}")
         self.write(command.encode())
+
+    def __enter__(self):
+        logger.info(f"Serial interface to the {self.name} is being opened.")
+        return super().__enter__()
+
+    def __exit__(self, *args, **kwargs):
+        logger.info(f"Serial interface to the {self.name} is being closed.")
+        return super().__exit__(*args, **kwargs)
 
     def readline(self, **kwargs) -> str:
         """
@@ -57,7 +68,7 @@ class Arduino(Serial):
         message = super().readline(**kwargs)
         message = message.rstrip(self.ARDUINO_EOL).decode()
 
-        logger.info(f"Received the following data from the {self.name}: '{message}'.")
+        logger.info(f"Received the following data from the {self.name}: {message}.")
         return message
 
     def find_pattern(self, pattern: re.Pattern) -> re.Match:
