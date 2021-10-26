@@ -81,6 +81,8 @@ class CoincidenceCircuit(Arduino):
         :return: an int value for the delay.
         """
         # Validate the delay.
+        if not isinstance(delay, float):
+            raise TypeError("Expected delay to be a float.")
         cls.validate_delay(delay)
         # Convert to an integer
         return int(delay // DELAY_STEP_SIZE)
@@ -93,6 +95,8 @@ class CoincidenceCircuit(Arduino):
         :return: the delay in ns.
         """
         # Validate the delay.
+        if not isinstance(delay, int):
+            raise TypeError("Expected delay to be an int.")
         cls.validate_delay(delay)
         # Convert to a float
         return delay * DELAY_STEP_SIZE
@@ -107,12 +111,13 @@ class CoincidenceCircuit(Arduino):
         if isinstance(delay, float):
             if not 0 <= delay <= DELAY_STEPS * DELAY_STEP_SIZE:
                 raise ValueError(f"Delay out of bounds, must be between 0ns and {DELAY_STEPS * DELAY_STEP_SIZE:.2f}ns.")
-            elif delay % DELAY_STEP_SIZE != 0:
+            if delay % DELAY_STEP_SIZE != 0:
                 raise ValueError(f"Delay must be multiple of {DELAY_STEP_SIZE}.")
-        elif isinstance(delay, int) and not 0 <= delay <= DELAY_STEPS:
-            raise ValueError(f"Delay out of bounds, must be between 0 and {DELAY_STEPS}.")
+        elif isinstance(delay, int):
+            if not 0 <= delay <= DELAY_STEPS:
+                raise ValueError(f"Delay out of bounds, must be between 0 and {DELAY_STEPS}.")
         else:
-            raise TypeError("Expected delay to be of type int or float.")
+            raise TypeError(f"Expected delay to be of type int or float, got {type(delay)} instead.")
 
     def toggle_verbose(self):
         """
