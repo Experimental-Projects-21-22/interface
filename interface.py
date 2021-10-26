@@ -212,8 +212,14 @@ class CoincidenceCircuit(Arduino):
         return delay
 
 
-class Stepper(Arduino):
+class Interferometer(Arduino):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, name='interferometer', **kwargs)
+
     # Class to control the stepper motor
+    def set_rotation(self, angle):
+        pass
+
     def rotate(self, angle):
         # Rotates the stepper motor to a specified angle
         pass

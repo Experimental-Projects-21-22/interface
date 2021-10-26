@@ -96,7 +96,7 @@ def coincidence_window():
 # Create objects for both arduino's
 Coinc = Inf.CoincidenceCircuit(test)
 Coinc.ser.open()
-Step = Inf.Stepper(test)
+Step = Inf.Interferometer(test)
 Step.ser.open()
 # Create the GUI
 window = tk.Tk()
