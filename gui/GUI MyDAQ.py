@@ -72,7 +72,7 @@ def read_write_window():
 
     # sets the title of the
     # Toplevel widget
-    newWindow.title("Read and write")
+    newWindow.title("Read and send_command")
 
     # Input
     global array_lab
@@ -260,7 +260,7 @@ def write_button():
         rate = float(rate_inp.get())
         samp = float(samp_inp.get())
 
-        md.write(array, rate, samp)
+        md.send_command(array, rate, samp)
     except(ValueError):
         print('Vul correcte waarden in a.u.b.')
 

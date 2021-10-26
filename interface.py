@@ -27,17 +27,23 @@ class Arduino(Serial):
 
     ARDUINO_EOL = b'\r\n'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, name: str = "Arduino", **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = name
 
-    def write(self, data):
+    def send_command(self, command):
         """
-        Identical to the write method of Serial, however this method will automatically encode the data if it is a str.
+        Identical to the write method of Serial, however this method will automatically encode the data if it is a str
+        and explicitly appends a newline (\n) character if it is not present. This avoid that the Arduino can receive
+        two concatenated strings if commands are rapidly sent after each other.
         """
-        if isinstance(data, str):
-            super().write(data.encode())
-        else:
-            super().write(data)
+        if not isinstance(command, str):
+            logger.info(f"Automatically converting command from {type(command).__name__} to str.")
+            command = str(command)
+        if not command.endswith('\n'):
+            logger.debug("Appending a newline (\\n) to command.")
+            command += '\n'
+        self.write(command.encode())
 
     def readline(self, **kwargs) -> str:
         """
@@ -51,7 +57,7 @@ class Arduino(Serial):
         message = super().readline(**kwargs)
         message = message.rstrip(self.ARDUINO_EOL).decode()
 
-        logger.info(message)
+        logger.info(f"Received the following data from the {self.name}: '{message}'.")
         return message
 
     def find_pattern(self, pattern: re.Pattern) -> re.Match:
@@ -72,6 +78,9 @@ class CoincidenceCircuit(Arduino):
     """
     Class to control the coincidence circuit. This consists of the delay lines as well as the counters.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, name='coincidence circuit', **kwargs)
 
     @classmethod
     def delay_to_int(cls, delay: float) -> int:
@@ -117,32 +126,32 @@ class CoincidenceCircuit(Arduino):
             if not 0 <= delay <= DELAY_STEPS:
                 raise ValueError(f"Delay out of bounds, must be between 0 and {DELAY_STEPS}.")
         else:
-            raise TypeError(f"Expected delay to be of type int or float, got {type(delay)} instead.")
+            raise TypeError(f"Expected delay to be of type int or float, got {type(delay).__name__} instead.")
 
     def toggle_verbose(self):
         """
         Turns verbose mode on or off on the Arduino.
         """
-        self.write('VERB')
+        self.send_command('VERB')
 
     def clear_counters(self):
         """
         Clears all the counts on the counters. Note that the registers remain unaffected.
         """
-        self.write('CLEAR')
+        self.send_command('CLEAR')
 
     def save_counts_to_register(self):
         """
         Saves the counts in the counters to their register. This allows them to be read out by the Arduino.
         """
-        self.write('SAVE')
+        self.send_command('SAVE')
 
     def read_counts_from_register(self) -> Tuple[int, ...]:
         """
         Reads the counts from the registers of the counter chips.
         :return: a tuple with the count on each counter.
         """
-        self.write('READ')
+        self.send_command('READ')
         match = self.find_pattern(COUNTER_REGEX)
         counts = tuple([int(x) for x in match.group(1, 2, 3)])
         return counts
@@ -160,8 +169,8 @@ class CoincidenceCircuit(Arduino):
         :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
         """
         assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.write(str(delay))
-        self.write('SD' + delay_line)
+        self.send_command(delay)
+        self.send_command('SD' + delay_line)
 
     def increment_delay(self, delay: int, delay_line: str):
         """
@@ -169,8 +178,8 @@ class CoincidenceCircuit(Arduino):
         :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
         """
         assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.write(str(delay))
-        self.write('ID' + delay_line)
+        self.send_command(delay)
+        self.send_command('ID' + delay_line)
 
     def decrement_delay(self, delay: int, delay_line: str):
         """
@@ -178,8 +187,8 @@ class CoincidenceCircuit(Arduino):
         :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
         """
         assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.write(str(delay))
-        self.write('DD' + delay_line)
+        self.send_command(delay)
+        self.send_command('DD' + delay_line)
 
     def get_delay(self, delay_line: str) -> int:
         """
