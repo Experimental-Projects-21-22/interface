@@ -94,7 +94,7 @@ def coincidence_window():
 
 
 # Create objects for both arduino's
-Coinc = Inf.Coincidence(test)
+Coinc = Inf.CoincidenceCircuit(test)
 Coinc.ser.open()
 Step = Inf.Stepper(test)
 Step.ser.open()

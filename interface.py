@@ -6,12 +6,14 @@ Written by:
     Douwe Remmelts <remmeltsdouwe@gmail.com>
 """
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from loguru import logger
 from serial import Serial
 
 DELAY_LINES: List[str] = ['CA', 'WA', 'CB', 'WB']
+DELAY_STEP_SIZE: float = 0.25
+DELAY_STEPS: int = 2 ** 8 - 1
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
 DELAY_REGEX = re.compile(r'(\d+)')
@@ -66,10 +68,51 @@ class Arduino(Serial):
                 return match
 
 
-class Coincidence(Arduino):
+class CoincidenceCircuit(Arduino):
     """
     Class to control the coincidence circuit. This consists of the delay lines as well as the counters.
     """
+
+    @classmethod
+    def delay_to_int(cls, delay: float) -> int:
+        """
+        Converts a delay (in ns) to an integer value that can then be sent to the Arduino.
+        :param delay: the delay in ns.
+        :return: an int value for the delay.
+        """
+        # Validate the delay.
+        cls.validate_delay(delay)
+        # Convert to an integer
+        return int(delay // DELAY_STEP_SIZE)
+
+    @classmethod
+    def int_to_delay(cls, delay: int) -> float:
+        """
+        Converts a delay (int as used by the Arduino) to a delay value in ns.
+        :param delay: the delay as integer.
+        :return: the delay in ns.
+        """
+        # Validate the delay.
+        cls.validate_delay(delay)
+        # Convert to a float
+        return delay * DELAY_STEP_SIZE
+
+    @staticmethod
+    def validate_delay(delay: Union[float, int]):
+        """
+        Validates if the specified delay in ns (float) or as used by the Arduino (int) is valid.
+        :param delay: the delay to validate.
+        :raise ValueError: if the array is out of bounds or (in case of a float) not a multiple of 0.25ns.
+        """
+        if isinstance(delay, float):
+            if not 0 <= delay <= DELAY_STEPS * DELAY_STEP_SIZE:
+                raise ValueError(f"Delay out of bounds, must be between 0ns and {DELAY_STEPS * DELAY_STEP_SIZE:.2f}ns.")
+            elif delay % DELAY_STEP_SIZE != 0:
+                raise ValueError(f"Delay must be multiple of {DELAY_STEP_SIZE}.")
+        elif isinstance(delay, int) and not 0 <= delay <= DELAY_STEPS:
+            raise ValueError(f"Delay out of bounds, must be between 0 and {DELAY_STEPS}.")
+        else:
+            raise TypeError("Expected delay to be of type int or float.")
 
     def toggle_verbose(self):
         """
