@@ -13,8 +13,6 @@ class G2(Scheme):
         self.coincidences = self.data[3]
 
     def setup(self):
-        super().setup()
-
         # Set the interferometer rotation to a known state.
         self.interferometer.set_rotation(0)
         # Set the coincidence circuit to its initial state.
