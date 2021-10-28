@@ -4,6 +4,7 @@ from time import sleep
 from typing import Tuple
 
 import numpy as np
+from loguru import logger
 
 from interface import CoincidenceCircuit, Interferometer
 
@@ -66,9 +67,11 @@ class Scheme:
         return self.data
 
     def setup(self):
+        logger.info(f"Setting up {self.scheme_name} measurement scheme...")
         self.timestamp = datetime.now()
 
         if not os.path.exists(self.data_folder):
+            logger.info(f"Creating data folder: {self.data_folder}!")
             os.makedirs(self.data_folder)
 
         self.coincidence_circuit.__enter__()
@@ -78,8 +81,10 @@ class Scheme:
         pass
 
     def save(self):
-        np.savez_compressed(self.file_name, **self.metadata)
+        logger.info(f"Saving data to file: {self.file_name}!")
+        np.savez_compressed(self.file_name, data=self.data, **self.metadata)
 
     def teardown(self):
+        logger.info(f"Tearing down {self.scheme_name} measurement scheme...")
         self.coincidence_circuit.__exit__()
         self.interferometer.__exit__()
