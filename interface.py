@@ -6,7 +6,7 @@ Written by:
     Douwe Remmelts <remmeltsdouwe@gmail.com>
 """
 import re
-from typing import List, Tuple, Union
+from typing import List, Tuple, TypeVar, Union
 
 from loguru import logger
 from serial import Serial
@@ -17,6 +17,9 @@ DELAY_STEPS: int = 2 ** 8 - 1
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
 DELAY_REGEX = re.compile(r'(\d+)')
+
+# Used for type hints.
+C = TypeVar('C', bound='Arduino')
 
 
 class Arduino(Serial):
@@ -40,15 +43,16 @@ class Arduino(Serial):
         two concatenated strings if commands are rapidly sent after each other.
         """
         if not isinstance(command, str):
-            logger.warning(f"Automatically converting command from {type(command).__name__} to str.")
+            logger.debug(f"Automatically converting command from {type(command).__name__} to str.")
             command = str(command)
+
+        logger.info(f"Sending the following command to the {self.name}: {command}")
         if not command.endswith('\n'):
             logger.debug("Appending a newline (\\n) to command.")
             command += '\n'
-        logger.info(f"Sending the following command to the {self.name}: {command}")
         self.write(command.encode())
 
-    def __enter__(self):
+    def __enter__(self: C) -> C:
         logger.info(f"Serial interface to the {self.name} is being opened.")
         return super().__enter__()
 
