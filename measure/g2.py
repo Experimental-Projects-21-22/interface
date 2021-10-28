@@ -1,48 +1,33 @@
 import time
 
-import numpy as np
-from loguru import logger
-from matplotlib import pyplot as plt
+from interface import DELAY_LINES
+from .scheme import Scheme
 
-from interface import CoincidenceCircuit, DELAY_LINES, DELAY_STEPS, DELAY_STEP_SIZE, Interferometer
 
-# Arrays to store our data
-delays = np.arange(0, DELAY_STEPS * DELAY_STEP_SIZE, DELAY_STEP_SIZE)
-counts1 = np.zeros((DELAY_STEPS,))
-counts2 = np.zeros((DELAY_STEPS,))
-coincidences = np.zeros((DELAY_STEPS,))
+class G2(Scheme):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, data_shape=(4, 5), iterations=5, **kwargs)
 
-with CoincidenceCircuit(baudrate=115200, port='/dev/cu.usbmodem14301') as coincidence_circuit, \
-        Interferometer(baudrate=115200, port='/dev/cu.usbmodem14301') as interferometer:
-    # Set the interferometer to a known state.
-    interferometer.set_rotation(0)
+        self.counts1 = self.data[1]
+        self.counts2 = self.data[2]
+        self.coincidences = self.data[3]
 
-    # Set the coincidence circuit to its initial state.
-    coincidence_circuit.toggle_verbose()
-    for delay_line in DELAY_LINES:
-        coincidence_circuit.set_delay(0, delay_line)
+    def setup(self):
+        super().setup()
 
-    # Delay 1s to give the Arduino time to process the flood of commands.
-    logger.info("Delaying measurement for 1 second...")
-    time.sleep(1)
-    logger.info("Starting measurement!")
+        # Set the interferometer rotation to a known state.
+        self.interferometer.set_rotation(0)
+        # Set the coincidence circuit to its initial state.
+        self.coincidence_circuit.toggle_verbose()
+        for delay_line in DELAY_LINES:
+            self.coincidence_circuit.set_delay(0, delay_line)
 
-    # Run a loop to do the actual measurements
-    for i in range(0, DELAY_STEPS):
+    def iteration(self, i):
         # Set the desired state
-        coincidence_circuit.set_delay(i, 'WA')
-        coincidence_circuit.set_delay(i, 'CA')
-        coincidence_circuit.clear_counters()
-
+        self.coincidence_circuit.set_delay(i, 'WA')
+        self.coincidence_circuit.set_delay(i, 'CA')
+        self.coincidence_circuit.clear_counters()
         # Wait for the data to be acquired.
         time.sleep(0.5)
-
         # Obtain the data
-        counts1[i], counts2[i], coincidences[i] = coincidence_circuit.save_and_read_counts()
-
-g2 = coincidences / (counts1 * counts2)
-
-plt.plot(delays, g2)
-plt.xlabel(r"$\tau$ (ns)")
-plt.ylabel(r"$g^2(\tau)$")
-plt.show()
+        self.counts1[i], self.counts2[i], self.coincidences[i] = self.coincidence_circuit.save_and_read_counts()
