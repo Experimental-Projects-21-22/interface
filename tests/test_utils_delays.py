@@ -35,15 +35,15 @@ class TestDelayLines(TestCase):
         CA_calibration: np.ndarray = np.polyfit(CA_data[:, 0], CA_data[:, 1], 1)
 
         # Check some basic calibration values.
-        self.assertEqual(DelayLine.CA.delay_step, CA_calibration[0])
-        self.assertEqual(DelayLine.CA.minimum_delay, CA_calibration[1])
-        self.assertEqual(DelayLine.CA.maximum_delay, CA_calibration[1] + CA_calibration[0] * DELAY_STEPS)
+        self.assertAlmostEqual(DelayLine.CA.delay_step, CA_calibration[0])
+        self.assertAlmostEqual(DelayLine.CA.minimum_delay, CA_calibration[1])
+        self.assertAlmostEqual(DelayLine.CA.maximum_delay, CA_calibration[1] + CA_calibration[0] * DELAY_STEPS)
 
         # Check that a specific delay is correctly calculated.
-        self.assertEqual(DelayLine.CA.calculate_delay(0), DelayLine.CA.minimum_delay)
-        self.assertEqual(DelayLine.CA.calculate_delay(DELAY_STEPS), DelayLine.CA.maximum_delay)
+        self.assertAlmostEqual(DelayLine.CA.calculate_delay(0), DelayLine.CA.minimum_delay)
+        self.assertAlmostEqual(DelayLine.CA.calculate_delay(DELAY_STEPS), DelayLine.CA.maximum_delay)
 
-        self.assertEqual(DelayLine.CA.calculate_delay(42), DelayLine.CA.minimum_delay + 42 * DelayLine.CA.delay_step)
+        self.assertAlmostEqual(DelayLine.CA.calculate_delay(42), DelayLine.CA.minimum_delay + 42 * DelayLine.CA.delay_step)
 
     def test_index_values(self):
         self.assertEqual(DelayLine.CA.index, 0)
