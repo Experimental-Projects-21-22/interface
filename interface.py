@@ -6,14 +6,12 @@ Written by:
     Douwe Remmelts <remmeltsdouwe@gmail.com>
 """
 import re
-from typing import List, Tuple, TypeVar, Union
+from typing import Tuple, TypeVar
 
 from loguru import logger
 from serial import Serial
 
-DELAY_LINES: List[str] = ['CA', 'WA', 'CB', 'WB']
-DELAY_STEP_SIZE: float = 0.25
-DELAY_STEPS: int = 2 ** 8 - 1
+from utils.delays import DelayLine
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
 DELAY_REGEX = re.compile(r'(\d+)')
@@ -97,52 +95,6 @@ class CoincidenceCircuit(Arduino):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, name='coincidence circuit', **kwargs)
 
-    @classmethod
-    def delay_to_int(cls, delay: float) -> int:
-        """
-        Converts a delay (in ns) to an integer value that can then be sent to the Arduino.
-        :param delay: the delay in ns.
-        :return: an int value for the delay.
-        """
-        # Validate the delay.
-        if not isinstance(delay, float):
-            raise TypeError("Expected delay to be a float.")
-        cls.validate_delay(delay)
-        # Convert to an integer
-        return int(delay // DELAY_STEP_SIZE)
-
-    @classmethod
-    def int_to_delay(cls, delay: int) -> float:
-        """
-        Converts a delay (int as used by the Arduino) to a delay value in ns.
-        :param delay: the delay as integer.
-        :return: the delay in ns.
-        """
-        # Validate the delay.
-        if not isinstance(delay, int):
-            raise TypeError("Expected delay to be an int.")
-        cls.validate_delay(delay)
-        # Convert to a float
-        return delay * DELAY_STEP_SIZE
-
-    @staticmethod
-    def validate_delay(delay: Union[float, int]):
-        """
-        Validates if the specified delay in ns (float) or as used by the Arduino (int) is valid.
-        :param delay: the delay to validate.
-        :raise ValueError: if the array is out of bounds or (in case of a float) not a multiple of 0.25ns.
-        """
-        if isinstance(delay, float):
-            if not 0 <= delay <= DELAY_STEPS * DELAY_STEP_SIZE:
-                raise ValueError(f"Delay out of bounds, must be between 0ns and {DELAY_STEPS * DELAY_STEP_SIZE:.2f}ns.")
-            if delay % DELAY_STEP_SIZE != 0:
-                raise ValueError(f"Delay must be multiple of {DELAY_STEP_SIZE}.")
-        elif isinstance(delay, int):
-            if not 0 <= delay <= DELAY_STEPS:
-                raise ValueError(f"Delay out of bounds, must be between 0 and {DELAY_STEPS}.")
-        else:
-            raise TypeError(f"Expected delay to be of type int or float, got {type(delay).__name__} instead.")
-
     def toggle_verbose(self):
         """
         Turns verbose mode on or off on the Arduino.
@@ -178,42 +130,29 @@ class CoincidenceCircuit(Arduino):
         self.save_counts_to_register()
         return self.read_counts_from_register()
 
-    def set_delay(self, delay: int, delay_line: str):
+    def set_delay(self, step: int, delay_line: DelayLine):
         """
         Sets the delay of the specified delay line to the specified value.
-        :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
+        :param step: value where step * d + d0 is the delay in ns.
         """
-        assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.send_command(delay)
-        self.send_command('SD' + delay_line)
+        self.send_command(step)
+        self.send_command('SD' + str(delay_line))
 
-    def increment_delay(self, delay: int, delay_line: str):
+    def increment_delay(self, step: int, delay_line: DelayLine):
         """
         Increments the delay of the specified delay line with the specified value.
-        :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
+        :param step: value where step * d is the increment in ns.
         """
-        assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.send_command(delay)
-        self.send_command('ID' + delay_line)
+        self.send_command(step)
+        self.send_command('ID' + str(delay_line))
 
-    def decrement_delay(self, delay: int, delay_line: str):
+    def decrement_delay(self, step: int, delay_line: DelayLine):
         """
         Decrements the delay of the specified delay line with the specified value.
-        :param delay: the delay as an integer where delay * 0.25ns is the actual delay.
+        :param step: value where step * d is the decrement in ns.
         """
-        assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        self.send_command(delay)
-        self.send_command('DD' + delay_line)
-
-    def get_delay(self, delay_line: str) -> int:
-        """
-        Gets the delay of the specified delay line to the specified value.
-        :return: the delay as an integer where delay * 0.25ns is the actual delay.
-        """
-        assert delay_line in DELAY_LINES, "Invalid delay line specified"
-        match = self.find_pattern(DELAY_REGEX)
-        delay = int(match.group(1))
-        return delay
+        self.send_command(step)
+        self.send_command('DD' + str(delay_line))
 
 
 class Interferometer(Arduino):

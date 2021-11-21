@@ -3,7 +3,7 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 
-from interface import DELAY_LINES
+from utils.delays import DELAY_LINES
 from .scheme import BaseScheme
 
 
