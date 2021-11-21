@@ -2,8 +2,9 @@ from enum import Enum, auto
 from functools import lru_cache
 
 import numpy as np
-
 # The maximum number of steps.
+from loguru import logger
+
 DELAY_STEPS: int = 2 ** 8 - 1
 # File containing the calibration data.
 DELAY_LINE_CALIBRATION_FILE = 'data/calibration/delay_lines.csv'
@@ -34,7 +35,9 @@ class DelayLine(Enum):
         Please note that this method is called by the enum module. Most IDEs will think `name` should be `self`, you
         should ignore this. For this method `name` is the name of the enum value.
         """
-        return name, start + count - 1
+        index = start + count - 1
+        logger.info(f'Registering delay line {name} with index {index}.')
+        return name, index
 
     # The enum values should be in the same order as the data in the calibration file.
     CA = auto()
@@ -49,6 +52,7 @@ class DelayLine(Enum):
         Calculates the calibration data for the delay lines. The calibration data is a 2x4 matrix. The first row
         contains the slope of the delay. The second row contains the minimum delay.
         """
+        logger.info('Calculating delay line calibration data.')
         calibration_data: np.ndarray = np.loadtxt(DELAY_LINE_CALIBRATION_FILE, delimiter=',', skiprows=1)
 
         # noinspection PyTypeChecker
