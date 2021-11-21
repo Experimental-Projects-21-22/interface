@@ -6,17 +6,14 @@ Written by:
     Douwe Remmelts <remmeltsdouwe@gmail.com>
 """
 import re
-from typing import List, Tuple, TypeVar, Union
+from typing import Tuple, TypeVar, Union
 
 from loguru import logger
 from serial import Serial
 
-DELAY_LINES: List[str] = ['CA', 'WA', 'CB', 'WB']
-DELAY_STEP_SIZE: float = 0.25
-DELAY_STEPS: int = 2 ** 8 - 1
+from utils.delays import DELAY_LINES, DELAY_REGEX, DELAY_STEPS, DELAY_STEP_SIZE
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
-DELAY_REGEX = re.compile(r'(\d+)')
 
 # Used for type hints.
 C = TypeVar('C', bound='Arduino')
@@ -134,7 +131,8 @@ class CoincidenceCircuit(Arduino):
         """
         if isinstance(delay, float):
             if not 0 <= delay <= DELAY_STEPS * DELAY_STEP_SIZE:
-                raise ValueError(f"Delay out of bounds, must be between 0ns and {DELAY_STEPS * DELAY_STEP_SIZE:.2f}ns.")
+                raise ValueError(
+                    f"Delay out of bounds, must be between 0ns and {DELAY_STEPS * DELAY_STEP_SIZE :.2f}ns.")
             if delay % DELAY_STEP_SIZE != 0:
                 raise ValueError(f"Delay must be multiple of {DELAY_STEP_SIZE}.")
         elif isinstance(delay, int):
