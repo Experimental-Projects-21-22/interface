@@ -11,7 +11,7 @@ from typing import Tuple, TypeVar
 from loguru import logger
 from serial import Serial
 
-from utils.delays import DelayLine
+from utils.delays import DelayLines
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
 DELAY_REGEX = re.compile(r'(\d+)')
@@ -130,7 +130,7 @@ class CoincidenceCircuit(Arduino):
         self.save_counts_to_register()
         return self.read_counts_from_register()
 
-    def set_delay(self, step: int, delay_line: DelayLine):
+    def set_delay(self, step: int, delay_line: DelayLines):
         """
         Sets the delay of the specified delay line to the specified value.
         :param step: value where step * d + d0 is the delay in ns.
@@ -138,7 +138,7 @@ class CoincidenceCircuit(Arduino):
         self.send_command(step)
         self.send_command('SD' + str(delay_line))
 
-    def increment_delay(self, step: int, delay_line: DelayLine):
+    def increment_delay(self, step: int, delay_line: DelayLines):
         """
         Increments the delay of the specified delay line with the specified value.
         :param step: value where step * d is the increment in ns.
@@ -146,7 +146,7 @@ class CoincidenceCircuit(Arduino):
         self.send_command(step)
         self.send_command('ID' + str(delay_line))
 
-    def decrement_delay(self, step: int, delay_line: DelayLine):
+    def decrement_delay(self, step: int, delay_line: DelayLines):
         """
         Decrements the delay of the specified delay line with the specified value.
         :param step: value where step * d is the decrement in ns.

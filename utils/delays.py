@@ -1,5 +1,6 @@
 from enum import Enum, auto
 from functools import lru_cache
+from typing import overload
 
 import numpy as np
 # The maximum number of steps.
@@ -7,19 +8,29 @@ from loguru import logger
 
 DELAY_STEPS: int = 2 ** 8 - 1
 # File containing the calibration data.
-DELAY_LINE_CALIBRATION_FILE = 'data/calibration/delay_lines.csv'
+DELAY_LINE_CALIBRATION_FILE = f'{__file__.strip("delays.py")}../data/calibration/delay_lines.csv'
 
 
-def validate_delay_step(steps: int) -> int:
+@overload
+def validate_delay_steps(steps: np.ndarray) -> np.ndarray:
+    ...
+
+
+@overload
+def validate_delay_steps(steps: int) -> int:
+    ...
+
+
+def validate_delay_steps(steps):
     """
     Raises a ValueError if the delay step is not in the range [0, DELAY_STEPS]. Else it returns steps.
     """
-    if not 0 <= steps <= DELAY_STEPS:
+    if not np.all(0 <= steps <= DELAY_STEPS):
         raise ValueError(f'Delay step must be in the range [0, {DELAY_STEPS}].')
     return steps
 
 
-class DelayLine(Enum):
+class DelayLines(Enum):
     """
     Provides an enum with the delay lines in our coincidence circuit. The delay lines are calibrated at run time with
     once and a cached version is used for future calls. The calibration is performed using a linear fit. This class
@@ -36,7 +47,7 @@ class DelayLine(Enum):
         should ignore this. For this method `name` is the name of the enum value.
         """
         index = start + count - 1
-        logger.info(f'Registering delay line {name} with index {index}.')
+        logger.debug(f'Registering delay line {name} with index {index}.')
         return name, index
 
     # The enum values should be in the same order as the data in the calibration file.
@@ -71,29 +82,41 @@ class DelayLine(Enum):
         """
         return self.value[1]
 
+    @overload
+    def calculate_delay(self, steps: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
     def calculate_delay(self, steps: int) -> float:
+        ...
+
+    def calculate_delay(self, steps):
         """
         Calculates the delay (in ns) for a given number of steps.
         :param steps: the number of steps.
         :return: a delay value in ns (including the offset or zero-delay).
         """
-        validate_delay_step(steps)
+        validate_delay_steps(steps)
         return self.minimum_delay + self.delay_step * steps
 
+    @overload
+    def calculate_steps(self, delay: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
     def calculate_steps(self, delay: float) -> int:
+        ...
+
+    def calculate_steps(self, delay):
         """
         Calculates the number of steps for a given delay and rounds the result to the nearest possible integer. This
         means that the returned value is always between 0 and DELAY_STEPS.
         :param delay: the delay in ns.
         :return: the number of steps resulting in the closest possible delay.
         """
-        optimal_step: float = (delay - self.minimum_delay) / self.delay_step
-        if optimal_step >= DELAY_STEPS:
-            return DELAY_STEPS
-        elif optimal_step <= 0:
-            return 0
-        else:
-            return round(optimal_step)
+        optimal_step = (delay - self.minimum_delay) / self.delay_step
+        optimal_step = np.round(optimal_step).astype(int)
+        return validate_delay_steps(optimal_step)
 
     @property
     def maximum_delay(self) -> float:

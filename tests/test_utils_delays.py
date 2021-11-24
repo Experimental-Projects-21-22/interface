@@ -2,29 +2,38 @@ from unittest import TestCase
 
 import numpy as np
 
-from utils.delays import DELAY_LINE_CALIBRATION_FILE, DELAY_STEPS, DelayLine, validate_delay_step
+from utils.delays import DELAY_LINE_CALIBRATION_FILE, DELAY_STEPS, DelayLines, validate_delay_steps
 
 
 class TestDelayLines(TestCase):
     def test_calibration_cache(self):
         # Clear the cache to make sure it's empty.
-        DelayLine._calibration.cache_clear()
+        DelayLines._calibration.cache_clear()
         # Call the function twice.
-        DelayLine._calibration()
-        DelayLine._calibration()
+        DelayLines._calibration()
+        DelayLines._calibration()
 
         # There should be one cache hit.
-        self.assertEqual(DelayLine._calibration.cache_info().hits, 1)
+        self.assertEqual(DelayLines._calibration.cache_info().hits, 1)
         # There should be one cache miss.
-        self.assertEqual(DelayLine._calibration.cache_info().misses, 1)
+        self.assertEqual(DelayLines._calibration.cache_info().misses, 1)
+
+    def test_calculate_steps_bounds(self):
+        # Step values should be between a 10ns and 100ns are just not possible.
+        self.assertRaises(ValueError, lambda: DelayLines.CA.calculate_steps(10))
+        self.assertRaises(ValueError, lambda: DelayLines.CA.calculate_steps(100))
+
+        # Two delays that are possible (but somewhere in between) should be possible.
+        DelayLines.CA.calculate_steps(20)
+        DelayLines.CA.calculate_steps(80)
 
     def test_calculate_delay_bounds(self):
         # Step values should be between 0 and 2 ** 8 - 1
-        self.assertRaises(ValueError, lambda: validate_delay_step(-1))
-        self.assertRaises(ValueError, lambda: validate_delay_step(2 ** 8))
+        self.assertRaises(ValueError, lambda: validate_delay_steps(-1))
+        self.assertRaises(ValueError, lambda: validate_delay_steps(2 ** 8))
 
-        validate_delay_step(0)
-        validate_delay_step(DELAY_STEPS - 1)
+        validate_delay_steps(0)
+        validate_delay_steps(DELAY_STEPS - 1)
 
     def test_CA_calibration(self):
         """
@@ -35,16 +44,17 @@ class TestDelayLines(TestCase):
         CA_calibration: np.ndarray = np.polyfit(CA_data[:, 0], CA_data[:, 1], 1)
 
         # Check some basic calibration values.
-        self.assertAlmostEqual(DelayLine.CA.delay_step, CA_calibration[0])
-        self.assertAlmostEqual(DelayLine.CA.minimum_delay, CA_calibration[1])
-        self.assertAlmostEqual(DelayLine.CA.maximum_delay, CA_calibration[1] + CA_calibration[0] * DELAY_STEPS)
+        self.assertAlmostEqual(DelayLines.CA.delay_step, CA_calibration[0])
+        self.assertAlmostEqual(DelayLines.CA.minimum_delay, CA_calibration[1])
+        self.assertAlmostEqual(DelayLines.CA.maximum_delay, CA_calibration[1] + CA_calibration[0] * DELAY_STEPS)
 
         # Check that a specific delay is correctly calculated.
-        self.assertAlmostEqual(DelayLine.CA.calculate_delay(0), DelayLine.CA.minimum_delay)
-        self.assertAlmostEqual(DelayLine.CA.calculate_delay(DELAY_STEPS), DelayLine.CA.maximum_delay)
+        self.assertAlmostEqual(DelayLines.CA.calculate_delay(0), DelayLines.CA.minimum_delay)
+        self.assertAlmostEqual(DelayLines.CA.calculate_delay(DELAY_STEPS), DelayLines.CA.maximum_delay)
 
-        self.assertAlmostEqual(DelayLine.CA.calculate_delay(42), DelayLine.CA.minimum_delay + 42 * DelayLine.CA.delay_step)
+        self.assertAlmostEqual(DelayLines.CA.calculate_delay(42),
+                               DelayLines.CA.minimum_delay + 42 * DelayLines.CA.delay_step)
 
     def test_index_values(self):
-        self.assertEqual(DelayLine.CA.index, 0)
-        self.assertEqual(DelayLine.WB.index, 3)
+        self.assertEqual(DelayLines.CA.index, 0)
+        self.assertEqual(DelayLines.WB.index, 3)
