@@ -130,28 +130,28 @@ class CoincidenceCircuit(Arduino):
         self.save_counts_to_register()
         return self.read_counts_from_register()
 
-    def set_delay(self, step: int, delay_line: DelayLines):
+    def set_delay(self, steps: int, delay_line: DelayLines):
         """
         Sets the delay of the specified delay line to the specified value.
-        :param step: value where step * d + d0 is the delay in ns.
+        :param steps: value where step * d + d0 is the delay in ns.
         """
-        self.send_command(step)
+        self.send_command(steps)
         self.send_command('SD' + str(delay_line))
 
-    def increment_delay(self, step: int, delay_line: DelayLines):
+    def increment_delay(self, steps: int, delay_line: DelayLines):
         """
         Increments the delay of the specified delay line with the specified value.
-        :param step: value where step * d is the increment in ns.
+        :param steps: value where step * d is the increment in ns.
         """
-        self.send_command(step)
+        self.send_command(steps)
         self.send_command('ID' + str(delay_line))
 
-    def decrement_delay(self, step: int, delay_line: DelayLines):
+    def decrement_delay(self, steps: int, delay_line: DelayLines):
         """
         Decrements the delay of the specified delay line with the specified value.
-        :param step: value where step * d is the decrement in ns.
+        :param steps: value where step * d is the decrement in ns.
         """
-        self.send_command(step)
+        self.send_command(steps)
         self.send_command('DD' + str(delay_line))
 
 

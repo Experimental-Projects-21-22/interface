@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
+from os.path import join
 from time import sleep
 from typing import Tuple, final
 
@@ -8,8 +9,7 @@ import numpy as np
 from loguru import logger
 
 from interface import CoincidenceCircuit, Interferometer
-
-DATETIME_FORMAT = '%Y-%m-%d-%H:%M:%S'
+from measure import DATA_DIRECTORY, DATETIME_FORMAT
 
 
 class BaseScheme(ABC):
@@ -67,14 +67,18 @@ class BaseScheme(ABC):
         """
         The folder where the data will be stored in.
         """
-        return f"data/{self.scheme_name}"
+        folder = join(DATA_DIRECTORY, self.scheme_name)
+        if not os.path.exists(folder):
+            logger.debug(f"Creating data folder: {folder}!")
+            os.makedirs(self.data_folder)
+        return folder
 
     @property
-    def file_name(self) -> str:
+    def save_file(self) -> str:
         """
         The folder the data will be stored in including the file name.
         """
-        return f"{self.data_folder}/{self.timestamp}.npz"
+        return join(self.data_folder, f'{self.timestamp}.npz')
 
     @final
     def __call__(self):
@@ -93,6 +97,7 @@ class BaseScheme(ABC):
         # Run the actual measurements.
         logger.info(f"Starting measurements for {self.scheme_name}.")
         for i in range(self.iterations):
+            logger.info(f"Acquiring data for iteration {i + 1} of {self.iterations}.")
             self.iteration(i)
         logger.info(f"Finished measurements for {self.scheme_name}.")
         # Save all data.
@@ -109,10 +114,6 @@ class BaseScheme(ABC):
         """
         logger.info(f"Preparing {self.scheme_name} measurement scheme...")
         self.timestamp = datetime.now()
-
-        if not os.path.exists(self.data_folder):
-            logger.info(f"Creating data folder: {self.data_folder}!")
-            os.makedirs(self.data_folder)
 
         self.coincidence_circuit.__enter__()
         self.interferometer.__enter__()
@@ -139,8 +140,8 @@ class BaseScheme(ABC):
         """
         Saves the acquired data, along with metadata, to file and compresses it.
         """
-        logger.info(f"Saving data to file: {self.file_name}!")
-        np.savez_compressed(self.file_name, data=self.data, **self.metadata)
+        logger.info(f"Saving data to file: {self.save_file}!")
+        np.savez_compressed(self.save_file, data=self.data, **self.metadata)
 
     @final
     def cleanup(self) -> None:

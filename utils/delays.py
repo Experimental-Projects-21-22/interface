@@ -6,9 +6,7 @@ import numpy as np
 # The maximum number of steps.
 from loguru import logger
 
-DELAY_STEPS: int = 2 ** 8 - 1
-# File containing the calibration data.
-DELAY_LINE_CALIBRATION_FILE = f'{__file__.strip("delays.py")}../data/calibration/delay_lines.csv'
+from utils import DELAY_LINE_CALIBRATION_FILE, DELAY_STEPS
 
 
 @overload
@@ -64,6 +62,7 @@ class DelayLines(Enum):
         contains the slope of the delay. The second row contains the minimum delay.
         """
         logger.info('Calculating delay line calibration data.')
+        logger.debug(f'Reading calibration data from {DELAY_LINE_CALIBRATION_FILE}.')
         calibration_data: np.ndarray = np.loadtxt(DELAY_LINE_CALIBRATION_FILE, delimiter=',', skiprows=1)
 
         # noinspection PyTypeChecker

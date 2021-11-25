@@ -3,8 +3,8 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 
+from measure.scheme import BaseScheme
 from utils.delays import DelayLines
-from .scheme import BaseScheme
 
 start_delay = 20
 end_delay = 60

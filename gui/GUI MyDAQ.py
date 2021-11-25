@@ -1,6 +1,7 @@
 import tkinter as tk
-import numpy as np
+
 import mydaq
+import numpy as np
 
 
 def sinus_window():
@@ -102,7 +103,6 @@ def read_write_window():
     plot_inp = tk.Checkbutton(newWindow, text='Plot data', variable=plot_var)
     two_inp = tk.Checkbutton(newWindow, text='Measure both input channels.', variable=two_var)
     sin_inp = tk.Checkbutton(newWindow, text='Sinusoidal input', command=sin_inp_func, variable=sin_var)
-
 
     array_lab = tk.Label(newWindow, text='Array')
     rate_I_lab = tk.Label(newWindow, text='Rate I')
@@ -405,6 +405,7 @@ def sin_inp_func():
         phase_inp.pack_forget()
         offset_lab.pack_forget()
         offset_inp.pack_forget()
+
 
 window = tk.Tk()
 

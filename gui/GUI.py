@@ -1,12 +1,13 @@
 # A probably unnecessary GUI for the interface code
 
-import tkinter as tk
-import interface as Inf
-from tkinter import messagebox
-
 # Create fake serial port for testing
 import os
 import pty
+import tkinter as tk
+from tkinter import messagebox
+
+import interface as Inf
+
 master, slave = pty.openpty()
 test = os.ttyname(slave)
 
@@ -53,7 +54,8 @@ def coincidence_window():
     clear_but = tk.Button(new_window, text='Clear counter chips', command=Coinc.clear_counters)
     save_but = tk.Button(new_window, text='Save counts to registers', command=Coinc.save_counts_to_register)
     read_but = tk.Button(new_window, text='Read counter registers', command=Coinc.read_counts_from_register)
-    save_read_but = tk.Button(new_window, text='Save and read_counts_from_register counter chips', command=Coinc.save_and_read_counts)
+    save_read_but = tk.Button(new_window, text='Save and read_counts_from_register counter chips',
+                              command=Coinc.save_and_read_counts)
 
     # Create buttons for delay line commands
     check_lab = tk.Label(new_window, text='On which delay lines should the command be performed?', font='Helvetica 12 '

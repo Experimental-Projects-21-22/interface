@@ -2,7 +2,8 @@ from unittest import TestCase
 
 import numpy as np
 
-from utils.delays import DELAY_LINE_CALIBRATION_FILE, DELAY_STEPS, DelayLines, validate_delay_steps
+from utils import DELAY_LINE_CALIBRATION_FILE, DELAY_STEPS
+from utils.delays import DelayLines, validate_delay_steps
 
 
 class TestDelayLines(TestCase):
