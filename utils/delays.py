@@ -3,7 +3,6 @@ from functools import lru_cache
 from typing import overload
 
 import numpy as np
-# The maximum number of steps.
 from loguru import logger
 
 from utils import DELAY_LINE_CALIBRATION_FILE, DELAY_STEPS

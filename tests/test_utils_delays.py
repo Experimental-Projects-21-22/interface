@@ -40,22 +40,35 @@ class TestDelayLines(TestCase):
         """
         There is nothing special about CA. However we picked to test the various methods of the delay lines.
         """
-        CA_data = np.loadtxt(DELAY_LINE_CALIBRATION_FILE, delimiter=',', skiprows=1, usecols=(0, 1))
+        calibration_data = np.loadtxt(DELAY_LINE_CALIBRATION_FILE, delimiter=',', skiprows=1, usecols=(0, 1))
         # noinspection PyTypeChecker
-        CA_calibration: np.ndarray = np.polyfit(CA_data[:, 0], CA_data[:, 1], 1)
+        CA_calibration: np.ndarray = np.polyfit(calibration_data[:, 0], calibration_data[:, 1], 1)
 
-        # Check some basic calibration values.
+        # Check minimum, maximum and delay step.
         self.assertAlmostEqual(DelayLines.CA.delay_step, CA_calibration[0])
         self.assertAlmostEqual(DelayLines.CA.minimum_delay, CA_calibration[1])
         self.assertAlmostEqual(DelayLines.CA.maximum_delay, CA_calibration[1] + CA_calibration[0] * DELAY_STEPS)
 
-        # Check that a specific delay is correctly calculated.
+        # Check basic step -> delay conversion.
         self.assertAlmostEqual(DelayLines.CA.calculate_delay(0), DelayLines.CA.minimum_delay)
         self.assertAlmostEqual(DelayLines.CA.calculate_delay(DELAY_STEPS), DelayLines.CA.maximum_delay)
 
+        # Check some random step -> delay conversion.
         self.assertAlmostEqual(DelayLines.CA.calculate_delay(42),
                                DelayLines.CA.minimum_delay + 42 * DelayLines.CA.delay_step)
+
+        # Check some random delay -> step conversion.
+        self.assertAlmostEqual(DelayLines.CA.calculate_steps(DelayLines.CA.minimum_delay), 0)
+        self.assertAlmostEqual(DelayLines.CA.calculate_steps(DelayLines.CA.maximum_delay), DELAY_STEPS)
+
+        # Check some random delay -> step conversion.
+        self.assertAlmostEqual(
+            DelayLines.CA.calculate_steps(DelayLines.CA.minimum_delay + 42 * DelayLines.CA.delay_step), 42)
 
     def test_index_values(self):
         self.assertEqual(DelayLines.CA.index, 0)
         self.assertEqual(DelayLines.WB.index, 3)
+
+    def test_delay_line_name(self):
+        self.assertEqual(str(DelayLines.CA), 'CA')
+        self.assertEqual(str(DelayLines.WB), 'WB')
