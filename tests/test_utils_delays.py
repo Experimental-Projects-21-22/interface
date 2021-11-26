@@ -50,11 +50,11 @@ class TestDelayLines(TestCase):
         self.assertAlmostEqual(DelayLines.CA.maximum_delay, CA_calibration[1] + CA_calibration[0] * DELAY_STEPS)
 
         # Check basic step -> delay conversion.
-        self.assertAlmostEqual(DelayLines.CA.calculate_delay(0), DelayLines.CA.minimum_delay)
-        self.assertAlmostEqual(DelayLines.CA.calculate_delay(DELAY_STEPS), DelayLines.CA.maximum_delay)
+        self.assertAlmostEqual(DelayLines.CA.calculate_delays(0), DelayLines.CA.minimum_delay)
+        self.assertAlmostEqual(DelayLines.CA.calculate_delays(DELAY_STEPS), DelayLines.CA.maximum_delay)
 
         # Check some random step -> delay conversion.
-        self.assertAlmostEqual(DelayLines.CA.calculate_delay(42),
+        self.assertAlmostEqual(DelayLines.CA.calculate_delays(42),
                                DelayLines.CA.minimum_delay + 42 * DelayLines.CA.delay_step)
 
         # Check some random delay -> step conversion.
