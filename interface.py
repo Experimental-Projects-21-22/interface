@@ -11,7 +11,7 @@ from typing import Tuple, TypeVar
 from loguru import logger
 from serial import Serial
 
-from utils.delays import DelayLines
+from utils.delays import DelayLines, validate_delay_steps
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
 DELAY_REGEX = re.compile(r'(\d+)')
@@ -135,6 +135,11 @@ class CoincidenceCircuit(Arduino):
         Sets the delay of the specified delay line to the specified value.
         :param steps: value where step * d + d0 is the delay in ns.
         """
+        validate_delay_steps(steps)
+
+        logger.debug(
+            f"Setting delay of {delay_line.name} to {steps} steps ({delay_line.calculate_delays(steps):3f} [ns]).")
+
         self.send_command(steps)
         self.send_command('SD' + str(delay_line))
 
