@@ -81,14 +81,14 @@ class DelayLines(Enum):
         return self.value[1]
 
     @overload
-    def calculate_delay(self, steps: np.ndarray) -> np.ndarray:
+    def calculate_delays(self, steps: np.ndarray) -> np.ndarray:
         ...
 
     @overload
-    def calculate_delay(self, steps: int) -> float:
+    def calculate_delays(self, steps: int) -> float:
         ...
 
-    def calculate_delay(self, steps):
+    def calculate_delays(self, steps):
         """
         Calculates the delay (in ns) for a given number of steps.
         :param steps: the number of steps.
@@ -121,7 +121,7 @@ class DelayLines(Enum):
         """
         :return: the maximum delay in ns.
         """
-        return self.calculate_delay(DELAY_STEPS)
+        return self.calculate_delays(DELAY_STEPS)
 
     @property
     def minimum_delay(self) -> float:
