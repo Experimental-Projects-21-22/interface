@@ -71,7 +71,7 @@ class BaseScheme(ABC):
         folder = join(DATA_DIRECTORY, self.scheme_name)
         if not os.path.exists(folder):
             logger.debug(f"Creating data folder: {folder}!")
-            os.makedirs(self.data_folder)
+            os.makedirs(folder)
         return folder
 
     @property
