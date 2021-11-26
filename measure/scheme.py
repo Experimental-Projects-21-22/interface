@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from os.path import join
 from time import sleep
-from typing import Tuple, final
+from typing import final
 
 import numpy as np
 from loguru import logger
@@ -19,14 +19,15 @@ class BaseScheme(ABC):
     compressing data (along with metadata).
     """
 
-    def __init__(self, coincidence_circuit: CoincidenceCircuit, interferometer: Interferometer,
-                 data_shape: Tuple[int, ...], iterations: int):
+    def __init__(self, coincidence_circuit: CoincidenceCircuit, interferometer: Interferometer, data_points: int,
+                 iterations: int):
         self.coincidence_circuit = coincidence_circuit
         self.interferometer = interferometer
 
+        data_shape = (data_points, iterations)
         self.data: np.ndarray = np.zeros(data_shape)
-        self.iterations = iterations
 
+        self._iterations = iterations
         self._timestamp: datetime = datetime.now()
 
     @property
@@ -96,8 +97,8 @@ class BaseScheme(ABC):
         sleep(1)
         # Run the actual measurements.
         logger.info(f"Starting measurements for {self.scheme_name}.")
-        for i in range(self.iterations):
-            logger.info(f"Acquiring data for iteration {i + 1} of {self.iterations}.")
+        for i in range(self._iterations):
+            logger.info(f"Acquiring data for iteration {i + 1} of {self._iterations}.")
             self.iteration(i)
         logger.info(f"Finished measurements for {self.scheme_name}.")
         # Save all data.

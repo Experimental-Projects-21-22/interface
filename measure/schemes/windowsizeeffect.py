@@ -13,7 +13,7 @@ ITERATIONS = END_DELAY - START_DELAY
 
 class WindowSizeEffect(BaseScheme):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, data_shape=(5, ITERATIONS), iterations=ITERATIONS, **kwargs)
+        super().__init__(*args, data_points=5, iterations=ITERATIONS, **kwargs)
 
         # Desired delays.
         desired_delays = np.linspace(START_DELAY, END_DELAY, ITERATIONS)

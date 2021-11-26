@@ -13,7 +13,7 @@ iterations = end_delay - start_delay
 
 class G2(BaseScheme):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, data_shape=(4, iterations), iterations=iterations, **kwargs)
+        super().__init__(*args, data_points=4, iterations=iterations, **kwargs)
 
         self.data[0] = np.linspace(start_delay, end_delay, iterations)
 
