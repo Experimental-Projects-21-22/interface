@@ -90,11 +90,11 @@ class BaseScheme(ABC):
         """
         # Prepares the system.
         self.prepare()
+        sleep(1)
         # Runs code that is required once.
         self.setup()
-
-        # Gives the Arduinos time to get settled.
         sleep(1)
+
         # Run the actual measurements.
         logger.info(f"Starting measurements for {self.scheme_name}.")
         for i in range(self._iterations):
