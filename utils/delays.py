@@ -22,7 +22,7 @@ def validate_delay_steps(steps):
     """
     Raises a ValueError if the delay step is not in the range [0, DELAY_STEPS]. Else it returns steps.
     """
-    if not np.all(0 <= steps <= DELAY_STEPS):
+    if np.any(steps < 0) or np.any(steps > DELAY_STEPS):
         raise ValueError(f'Delay step must be in the range [0, {DELAY_STEPS}].')
     return steps
 
