@@ -154,7 +154,7 @@ class BaseScheme(ABC):
         self.interferometer.__exit__()
 
     @staticmethod
-    def analyse(data: np.ndarray) -> None:
+    def analyse(data: np.ndarray, **metadata) -> None:
         """
         This method can be called to analyse the acquired data. It is not run automatically. The rational for making it
         static is to signal that it is not necessarily part of the scheme and does not need to be used. It is part of
@@ -162,5 +162,6 @@ class BaseScheme(ABC):
         somehow. Additionally, since it is static it can be called without creating an object thus allowing it to be run
         without needing to instantiate serial connections.
         :param data: the data as acquired by running the scheme.
+        :param metadata: the metadata as specified in the metadata property.
         """
         pass

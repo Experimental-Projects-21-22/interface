@@ -51,7 +51,7 @@ class WindowSizeEffect(BaseScheme):
         self.data[2:, i] = self.coincidence_circuit.save_and_read_counts()
 
     @staticmethod
-    def analyse(data):
+    def analyse(data, **metadata):
         delay_WA = DelayLines.WA.calculate_delays(data[0, :])
         delay_WB = DelayLines.WB.calculate_delays(data[1, :])
 

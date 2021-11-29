@@ -39,7 +39,7 @@ class G2(BaseScheme):
         self.data[1:, i] = self.coincidence_circuit.save_and_read_counts()
 
     @staticmethod
-    def analyse(data):
+    def analyse(data, **metadata):
         delays = data[0]
         counts1 = data[1]
         counts2 = data[2]
