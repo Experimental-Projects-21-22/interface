@@ -70,7 +70,7 @@ class Arduino(Serial):
         message = super().readline(**kwargs)
         message = message.rstrip(self.ARDUINO_EOL).decode()
 
-        logger.info(f"Received the following data from the {self.name}: {message}.")
+        logger.debug(f"Received the following data from the {self.name}: {message}.")
         return message
 
     def find_pattern(self, pattern: re.Pattern) -> re.Match:
@@ -113,17 +113,17 @@ class CoincidenceCircuit(Arduino):
         """
         self.send_command('SAVE')
 
-    def read_counts_from_register(self) -> Tuple[int, ...]:
+    def read_counts_from_register(self) -> Tuple[int, int, int]:
         """
         Reads the counts from the registers of the counter chips.
         :return: a tuple with the count on each counter.
         """
         self.send_command('READ')
         match = self.find_pattern(COUNTER_REGEX)
-        counts = tuple([int(x) for x in match.group(1, 2, 3)])
-        return counts
+        # noinspection PyTypeChecker
+        return tuple([int(x) for x in match.group(1, 2, 3)])
 
-    def save_and_read_counts(self) -> Tuple[int, ...]:
+    def save_and_read_counts(self) -> Tuple[int, int, int]:
         """
         Combines save_counts_to_register with read_counts_from_register. See their docstrings.
         """
@@ -142,22 +142,6 @@ class CoincidenceCircuit(Arduino):
 
         self.send_command(steps)
         self.send_command('SD' + str(delay_line))
-
-    def increment_delay(self, steps: int, delay_line: DelayLines):
-        """
-        Increments the delay of the specified delay line with the specified value.
-        :param steps: value where step * d is the increment in ns.
-        """
-        self.send_command(steps)
-        self.send_command('ID' + str(delay_line))
-
-    def decrement_delay(self, steps: int, delay_line: DelayLines):
-        """
-        Decrements the delay of the specified delay line with the specified value.
-        :param steps: value where step * d is the decrement in ns.
-        """
-        self.send_command(steps)
-        self.send_command('DD' + str(delay_line))
 
 
 class Interferometer(Arduino):
