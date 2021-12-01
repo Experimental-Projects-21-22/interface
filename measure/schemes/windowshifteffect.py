@@ -30,8 +30,8 @@ class WindowShiftEffect(BaseScheme):
         self.fixed_delay_W = self.fixed_line_W.calculate_steps(self.fixed_line_W.maximum_delay / 2 + WINDOW_SIZE)
 
         # Desired delays.
-        start_delay = self.fixed_delay_C - REGION_SIZE
-        end_delay = self.fixed_delay_C + REGION_SIZE
+        start_delay = self.fixed_line_C.maximum_delay / 2 - REGION_SIZE
+        end_delay = self.fixed_line_C.maximum_delay / 2 + REGION_SIZE
         desired_delays = np.linspace(start_delay, end_delay, self._iterations)
         # Optimal steps for the delays.
         self.data[0] = self.shift_line_C.calculate_steps(desired_delays)
