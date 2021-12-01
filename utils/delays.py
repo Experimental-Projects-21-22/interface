@@ -22,8 +22,12 @@ def validate_delay_steps(steps):
     """
     Raises a ValueError if the delay step is not in the range [0, DELAY_STEPS]. Else it returns steps.
     """
+    if isinstance(steps, np.ndarray):
+        steps = steps.astype(int)
+    else:
+        steps = int(steps)
     if np.any(steps < 0) or np.any(steps > DELAY_STEPS):
-        raise ValueError(f'Delay step must be in the range [0, {DELAY_STEPS}].')
+        raise ValueError(f'Delay step must be in the range [0, {DELAY_STEPS}], was {steps}.')
     return steps
 
 
