@@ -95,10 +95,10 @@ class DelayLines(Enum):
     def calculate_delays(self, steps):
         """
         Calculates the delay (in ns) for a given number of steps.
-        :param steps: the number of steps.
+        :param: steps: the number of steps.
         :return: a delay value in ns (including the offset or zero-delay).
         """
-        validate_delay_steps(steps)
+        steps = validate_delay_steps(steps)
         return self.minimum_delay + self.delay_step * steps
 
     @overload
