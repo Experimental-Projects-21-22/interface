@@ -9,7 +9,7 @@ if __name__ == '__main__':
     scheme_B = WindowShiftEffect(coincidence_circuit=coincidence_circuit, interferometer=interferometer, shift_A=False)
 
     data = scheme_A()
-    scheme_A.analyse(data)
+    scheme_A.analyse(data, scheme_A.metadata)
 
     data = scheme_B()
-    scheme_B.analyse(data)
+    scheme_B.analyse(data, scheme_B.metadata)

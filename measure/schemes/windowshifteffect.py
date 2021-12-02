@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
 
-WINDOW_SIZE = 11.25
-REGION_SIZE = 7
+WINDOW_SIZE = 12
+REGION_SIZE = 4
 
 
 class WindowShiftEffect(BaseScheme):
@@ -65,7 +65,7 @@ class WindowShiftEffect(BaseScheme):
         self.data[2:, i] = self.coincidence_circuit.save_and_read_counts()
 
     @staticmethod
-    def analyse(data, **metadata):
+    def analyse(data, metadata):
         if metadata['shift_A']:
             shift_line_C = DelayLines.CA
             fixed_line_C = DelayLines.CB
