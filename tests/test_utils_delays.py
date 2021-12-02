@@ -7,6 +7,13 @@ from utils.delays import DelayLines, validate_delay_steps
 
 
 class TestDelayLines(TestCase):
+    def test_validation_typing(self):
+        test_value = 1.
+        self.assertEqual(type(validate_delay_steps(test_value)), int)
+
+        test_array = np.array([1., 2., 3.])
+        self.assertEqual(validate_delay_steps(test_array).dtype, int)
+
     def test_calibration_cache(self):
         # Clear the cache to make sure it's empty.
         DelayLines._calibration.cache_clear()
