@@ -70,7 +70,7 @@ class Arduino(Serial):
         message = super().readline(**kwargs)
         message = message.rstrip(self.ARDUINO_EOL).decode()
 
-        logger.debug(f"Received the following data from the {self.name}: {message}.")
+        # logger.debug(f"Received the following data from the {self.name}: {message}.")
         return message
 
     def find_pattern(self, pattern: re.Pattern) -> re.Match:
@@ -135,7 +135,7 @@ class CoincidenceCircuit(Arduino):
         Sets the delay of the specified delay line to the specified value.
         :param steps: value where step * d + d0 is the delay in ns.
         """
-        validate_delay_steps(steps)
+        steps = validate_delay_steps(steps)
 
         logger.debug(
             f"Setting delay of {delay_line.name} to {steps} steps ({delay_line.calculate_delays(steps):3f} [ns]).")
