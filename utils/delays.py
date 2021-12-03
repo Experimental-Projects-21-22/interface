@@ -71,9 +71,14 @@ class DelayLines(Enum):
         steps = calibration_data[:, 0]
         delays = calibration_data[:, 1::2]
         sigmas = calibration_data[:, 2::2]
+        weights = 1 / sigmas
 
-        # noinspection PyTypeChecker
-        return np.polyfit(steps, delays, 1)
+        # Create an empty array for the optimal values.
+        popt = np.empty((2, len(cls)))
+        # We use a for-loop to get around the issue that polyfit does not accept a 2D-weight array.
+        for i in range(len(cls)):
+            popt[:, i] = np.polyfit(steps, delays[:, i], 1, w=weights[:, i])
+        return popt
 
     def __str__(self):
         """

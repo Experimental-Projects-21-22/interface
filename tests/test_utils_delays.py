@@ -53,9 +53,10 @@ class TestDelayLines(TestCase):
         """
         There is nothing special about CA. However we picked to test the various methods of the delay lines.
         """
-        calibration_data = np.loadtxt(DELAY_LINE_CALIBRATION_FILE, delimiter=',', skiprows=1, usecols=(0, 1))
+        calibration_data = np.loadtxt(DELAY_LINE_CALIBRATION_FILE, delimiter=',', skiprows=1, usecols=(0, 1, 2))
         # noinspection PyTypeChecker
-        CA_calibration: np.ndarray = np.polyfit(calibration_data[:, 0], calibration_data[:, 1], 1)
+        CA_calibration: np.ndarray = np.polyfit(calibration_data[:, 0], calibration_data[:, 1], 1,
+                                                w=1 / calibration_data[:, 2])
 
         # Check minimum, maximum and delay step.
         self.assertAlmostEqual(DelayLines.CA.delay_step, CA_calibration[0])
