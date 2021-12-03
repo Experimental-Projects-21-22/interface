@@ -12,9 +12,8 @@ class TestDelayLines(TestCase):
             # If we take no steps the STD should be equal to the error in the minimum delay.
             self.assertAlmostEqual(delay_line.calculate_delays_std(0),
                                    np.sqrt(delay_line._calibration()[1][1, delay_line.index]))
-            # The error in the delay step should always be smaller than the error in the minimum delay.
-            self.assertTrue(np.sqrt(delay_line._calibration()[1][1, delay_line.index])
-                            < np.sqrt(delay_line._calibration()[0][1, delay_line.index]))
+        # The error in the delay step should always be smaller than the error in the minimum delay.
+        self.assertTrue(np.all(DelayLines._calibration()[1][1] < DelayLines._calibration()[0][1]))
 
     def test_delay_line_approximate_step(self):
         # Check if the values are expected according to the data sheet of the delay lines.
