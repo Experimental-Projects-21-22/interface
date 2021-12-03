@@ -143,6 +143,18 @@ class CoincidenceCircuit(Arduino):
         self.send_command(steps)
         self.send_command('SD' + str(delay_line))
 
+    def measure(self, time: int) -> Tuple[int, int, int]:
+        """
+        Clears the counters and measures for the specified time. Should be the preferred method for gathering data.
+        :param time: the time in s to measure for.
+        :return: a tuple with the counts on each counter.
+        """
+        self.send_command(time)
+        self.send_command('MEASURE')
+        match = self.find_pattern(COUNTER_REGEX)
+        # noinspection PyTypeChecker
+        return tuple([int(x) for x in match.group(1, 2, 3)])
+
 
 class Interferometer(Arduino):
     def __init__(self, *args, **kwargs):

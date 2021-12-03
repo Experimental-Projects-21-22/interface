@@ -1,11 +1,11 @@
-import time
-
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
+
+MEASURE_TIME = 1
 
 WINDOW_SIZE = 11.5
 REGION_SIZE = 4
@@ -71,11 +71,7 @@ class WindowShiftEffect(BaseScheme):
         delay_W = self.data[1, i]
         self.coincidence_circuit.set_delay(delay_C, self.shift_line_C)
         self.coincidence_circuit.set_delay(delay_W, self.shift_line_W)
-        self.coincidence_circuit.clear_counters()
-        # Wait for the data to be acquired.
-        time.sleep(1)
-        # Obtain the data
-        self.data[2:, i] = self.coincidence_circuit.save_and_read_counts()
+        self.data[2:, i] = self.coincidence_circuit.measure(MEASURE_TIME)
 
     @classmethod
     def analyse(cls, data, metadata):
