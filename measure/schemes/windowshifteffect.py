@@ -7,15 +7,18 @@ from matplotlib import pyplot as plt
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
 
-WINDOW_SIZE = 12
+WINDOW_SIZE = 11.5
 REGION_SIZE = 4
+ITERATIONS = 2 * 4 * REGION_SIZE
 
 COINCIDENCE_THRESHOLD = 0.05
+
+CORRECTION_FACTOR = 2.3
 
 
 class WindowShiftEffect(BaseScheme):
     def __init__(self, *args, shift_A: bool = True, **kwargs):
-        super().__init__(*args, data_points=5, iterations=2 * 4 * REGION_SIZE, **kwargs)
+        super().__init__(*args, data_points=5, iterations=ITERATIONS, **kwargs)
 
         self.shift_A = shift_A
         if shift_A:
@@ -29,13 +32,19 @@ class WindowShiftEffect(BaseScheme):
             self.fixed_line_C = DelayLines.CA
             self.fixed_line_W = DelayLines.WA
 
-        self.fixed_delay_C = self.fixed_line_C.calculate_steps(self.fixed_line_C.maximum_delay / 2)
-        self.fixed_delay_W = self.fixed_line_W.calculate_steps(self.fixed_line_W.maximum_delay / 2 + WINDOW_SIZE)
+        # Middle of the achievable delay range
+        middle_delay = self.fixed_line_C.maximum_delay / 2
+        self.fixed_delay_C = self.fixed_line_C.calculate_steps(middle_delay)
+        self.fixed_delay_W = self.fixed_line_W.calculate_steps(middle_delay + WINDOW_SIZE)
 
-        # Desired delays.
-        start_delay = self.fixed_line_C.maximum_delay / 2 - REGION_SIZE
-        end_delay = self.fixed_line_C.maximum_delay / 2 + REGION_SIZE
+        # Add a correction so that the windows are centered around 0.
+        correction = CORRECTION_FACTOR if shift_A else -CORRECTION_FACTOR
+        middle_delay -= correction
+
+        start_delay = middle_delay - REGION_SIZE
+        end_delay = middle_delay + REGION_SIZE
         desired_delays = np.linspace(start_delay, end_delay, self._iterations)
+
         # Optimal steps for the delays.
         self.data[0] = self.shift_line_C.calculate_steps(desired_delays)
         self.data[1] = self.shift_line_W.calculate_steps(desired_delays + WINDOW_SIZE)
@@ -44,10 +53,11 @@ class WindowShiftEffect(BaseScheme):
     def metadata(self) -> dict:
         metadata = super().metadata
         metadata.update({
-            'window_size':   WINDOW_SIZE,
-            'region_size':   REGION_SIZE,
-            'shift_A':       self.shift_A,
-            'fixed_delay_C': self.fixed_delay_C,
+            'window_size':       WINDOW_SIZE,
+            'region_size':       REGION_SIZE,
+            'shift_A':           self.shift_A,
+            'fixed_delay_C':     self.fixed_delay_C,
+            'correction_factor': CORRECTION_FACTOR,
         })
         return metadata
 
@@ -79,6 +89,7 @@ class WindowShiftEffect(BaseScheme):
             fixed_line_C = DelayLines.CA
         fixed_delay = fixed_line_C.calculate_delays(metadata['fixed_delay_C'])
         delay = shift_line_C.calculate_delays(data[0, :]) - fixed_delay
+        delay += metadata['correction_factor'] if metadata['shift_A'] else -metadata['correction_factor']
 
         counts1 = data[2, :]
         counts2 = data[3, :]
