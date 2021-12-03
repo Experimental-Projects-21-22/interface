@@ -68,8 +68,12 @@ class DelayLines(Enum):
         logger.debug(f'Reading calibration data from {DELAY_LINE_CALIBRATION_FILE}.')
         calibration_data: np.ndarray = np.loadtxt(DELAY_LINE_CALIBRATION_FILE, delimiter=',', skiprows=1)
 
+        steps = calibration_data[:, 0]
+        delays = calibration_data[:, 1::2]
+        sigmas = calibration_data[:, 2::2]
+
         # noinspection PyTypeChecker
-        return np.polyfit(calibration_data[:, 0], calibration_data[:, 1:], 1)
+        return np.polyfit(steps, delays, 1)
 
     def __str__(self):
         """

@@ -7,6 +7,12 @@ from utils.delays import DelayLines, validate_delay_steps
 
 
 class TestDelayLines(TestCase):
+    def test_delay_line_approximate_step(self):
+        # Check if the values are expected according to the data sheet of the delay lines.
+        for delay_line in DelayLines:
+            self.assertAlmostEqual(delay_line.minimum_delay, 16.5, delta=3)
+            self.assertAlmostEqual(delay_line.delay_step, 0.25, delta=0.05)
+
     def test_validation_typing(self):
         test_value = 1.
         self.assertEqual(type(validate_delay_steps(test_value)), int)
@@ -31,9 +37,9 @@ class TestDelayLines(TestCase):
         self.assertRaises(ValueError, lambda: DelayLines.CA.calculate_steps(10))
         self.assertRaises(ValueError, lambda: DelayLines.CA.calculate_steps(100))
 
-        # Two delays that are possible (but somewhere in between) should be possible.
+        # Two delays that are barely possible (but somewhere in between) should be possible.
         DelayLines.CA.calculate_steps(20)
-        DelayLines.CA.calculate_steps(80)
+        DelayLines.CA.calculate_steps(75)
 
     def test_calculate_delay_bounds(self):
         # Step values should be between 0 and 2 ** 8 - 1
