@@ -3,10 +3,11 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from os.path import join
 from time import sleep
-from typing import final
+from typing import Tuple, final
 
 import numpy as np
 from loguru import logger
+from numpy.lib.npyio import NpzFile
 
 from interface import CoincidenceCircuit, Interferometer
 from measure import DATA_DIRECTORY, DATETIME_FORMAT
@@ -153,8 +154,8 @@ class BaseScheme(ABC):
         self.coincidence_circuit.__exit__()
         self.interferometer.__exit__()
 
-    @staticmethod
-    def analyse(data: np.ndarray, metadata) -> None:
+    @classmethod
+    def analyse(cls, data: np.ndarray, metadata) -> None:
         """
         This method can be called to analyse the acquired data. It is not run automatically. The rational for making it
         static is to signal that it is not necessarily part of the scheme and does not need to be used. It is part of
@@ -165,3 +166,29 @@ class BaseScheme(ABC):
         :param metadata: the metadata as specified in the metadata property.
         """
         pass
+
+    @staticmethod
+    @final
+    def load(file_name: str) -> Tuple[np.ndarray, dict]:
+        """
+        Loads the data from the specified file. Automatically separates data from metadata
+        :param file_name: the file to load.
+        :return: a tuple containing the data and the metadata.
+        """
+        # noinspection PyTypeChecker
+        file_contents: NpzFile = np.load(file_name)
+        # Retrieve the data and metadata.
+        metadata = {key: file_contents[key] for key in file_contents.files if key != 'data'}
+        data = file_contents['data']
+        return data, metadata
+
+    @classmethod
+    @final
+    def load_and_analyse(cls, file_name: str) -> None:
+        """
+        Loads the data from the specified file and analyzes it.
+        :param file_name: the file to load.
+        """
+        logger.info(f"Loading and analyzing data from file: {file_name}!")
+        data, metadata = cls.load(file_name)
+        cls.analyse(data, metadata)

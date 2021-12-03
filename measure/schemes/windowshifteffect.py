@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+from loguru import logger
 from matplotlib import pyplot as plt
 
 from measure.scheme import BaseScheme
@@ -8,6 +9,8 @@ from utils.delays import DelayLines
 
 WINDOW_SIZE = 12
 REGION_SIZE = 4
+
+COINCIDENCE_THRESHOLD = 0.05
 
 
 class WindowShiftEffect(BaseScheme):
@@ -64,23 +67,48 @@ class WindowShiftEffect(BaseScheme):
         # Obtain the data
         self.data[2:, i] = self.coincidence_circuit.save_and_read_counts()
 
-    @staticmethod
-    def analyse(data, metadata):
+    @classmethod
+    def analyse(cls, data, metadata):
         if metadata['shift_A']:
+            plt.title("Window Shift Effect (A)")
             shift_line_C = DelayLines.CA
             fixed_line_C = DelayLines.CB
         else:
+            plt.title("Window Shift Effect (B)")
             shift_line_C = DelayLines.CB
             fixed_line_C = DelayLines.CA
-        delay = shift_line_C.calculate_delays(data[0, :]) - fixed_line_C.calculate_delays(metadata['fixed_delay_C'])
+        fixed_delay = fixed_line_C.calculate_delays(metadata['fixed_delay_C'])
+        delay = shift_line_C.calculate_delays(data[0, :]) - fixed_delay
 
         counts1 = data[2, :]
         counts2 = data[3, :]
         coincidences = data[4, :]
 
+        # Approximate the coincidence window
+        mask = (coincidences > COINCIDENCE_THRESHOLD * counts1) & (coincidences > COINCIDENCE_THRESHOLD * counts2)
+        indices = np.asarray(np.where(mask[1:] != mask[:-1])).flatten()
+        window_left_indices = indices[::2]
+        window_right_indices = indices[1::2] + 1
+        window_left_delay = delay[window_left_indices]
+        window_right_delay = delay[window_right_indices]
+
+        no_coincidence_window = len(window_left_delay) == 0 or len(window_right_delay) == 0
+        multiple_coincidence_windows = len(window_left_delay) > 1 and len(window_right_delay) > 1
+        if multiple_coincidence_windows:
+            logger.info(f"Found {len(window_left_delay)} coincidence windows.")
+        elif not no_coincidence_window:
+            logger.info(f"Window of length: {(window_right_delay - window_left_delay)[0]:.2f}ns.")
+            logger.info(f"Window is centered around: {(window_left_delay + window_right_delay)[0] / 2:.2f}ns.")
+
         plt.scatter(delay, counts1, label='Counts 1', marker='+', alpha=0.5)
         plt.scatter(delay, counts2, label='Counts 2', marker='+', alpha=0.5)
         plt.scatter(delay, coincidences, label='Coincidences', marker='x')
+
+        for ldelay in window_left_delay:
+            plt.axvline(ldelay, color='r', linestyle='--', alpha=0.5)
+        for rdelay in window_right_delay:
+            plt.axvline(rdelay, color='r', linestyle='--', alpha=0.5)
+
         plt.ylabel('Counts')
         plt.xlabel('Delay between lines [ns]')
         plt.legend()
