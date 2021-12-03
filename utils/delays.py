@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from functools import lru_cache
-from typing import overload
+from typing import Tuple, overload
 
 import numpy as np
 from loguru import logger
@@ -59,7 +59,7 @@ class DelayLines(Enum):
 
     @classmethod
     @lru_cache(maxsize=1)
-    def _calibration(cls) -> np.ndarray:
+    def _calibration(cls) -> Tuple[np.ndarray, np.ndarray]:
         """
         Calculates the calibration data for the delay lines. The calibration data is a 2x4 matrix. The first row
         contains the slope of the delay. The second row contains the minimum delay.
@@ -75,10 +75,13 @@ class DelayLines(Enum):
 
         # Create an empty array for the optimal values.
         popt = np.empty((2, len(cls)))
+        pcov = np.empty((2, 2, len(cls)))
         # We use a for-loop to get around the issue that polyfit does not accept a 2D-weight array.
         for i in range(len(cls)):
-            popt[:, i] = np.polyfit(steps, delays[:, i], 1, w=weights[:, i])
-        return popt
+            # noinspection PyTupleAssignmentBalance
+            popt[:, i], pcov[:, :, i] = np.polyfit(steps, delays[:, i], 1, w=weights[:, i], cov=True)
+        pcov = np.diagonal(pcov).T
+        return popt, pcov
 
     def __str__(self):
         """
@@ -111,6 +114,21 @@ class DelayLines(Enum):
         return self.minimum_delay + self.delay_step * steps
 
     @overload
+    def calculate_delays_std(self, steps: np.ndarray) -> np.ndarray:
+        ...
+
+    @overload
+    def calculate_delays_std(self, steps: int) -> int:
+        ...
+
+    def calculate_delays_std(self, steps):
+        steps = validate_delay_steps(steps)
+        return np.sqrt(
+            self._calibration()[1][0, self.index] * np.square(steps) +
+            self._calibration()[1][1, self.index]
+        )
+
+    @overload
     def calculate_steps(self, delay: np.ndarray) -> np.ndarray:
         ...
 
@@ -141,11 +159,11 @@ class DelayLines(Enum):
         """
         :return: the minimum delay in ns.
         """
-        return self._calibration()[1, self.index]
+        return self._calibration()[0][1, self.index]
 
     @property
     def delay_step(self) -> float:
         """
         :return: the delay step in ns.
         """
-        return self._calibration()[0, self.index]
+        return self._calibration()[0][0, self.index]
