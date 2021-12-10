@@ -15,6 +15,9 @@ COINCIDENCE_THRESHOLD = 0.05
 
 CORRECTION_FACTOR = 2.3
 
+LOWER_DELAY_LIMIT = 20
+UPPER_DELAY_LIMIT = 80
+
 
 class WindowShiftEffect(BaseScheme):
     def __init__(self, *args, shift_A: bool = True, **kwargs):
@@ -33,16 +36,16 @@ class WindowShiftEffect(BaseScheme):
             self.fixed_line_W = DelayLines.WA
 
         # Middle of the achievable delay range
-        middle_delay = self.fixed_line_C.maximum_delay / 2
-        self.fixed_delay_C = self.fixed_line_C.calculate_steps(middle_delay)
-        self.fixed_delay_W = self.fixed_line_W.calculate_steps(middle_delay + WINDOW_SIZE)
+        fixed_delay = LOWER_DELAY_LIMIT + REGION_SIZE
+        self.fixed_delay_C = self.fixed_line_C.calculate_steps(fixed_delay)
+        self.fixed_delay_W = self.fixed_line_W.calculate_steps(fixed_delay + WINDOW_SIZE)
 
         # Add a correction so that the windows are centered around 0.
         correction = CORRECTION_FACTOR if shift_A else -CORRECTION_FACTOR
-        middle_delay -= correction
+        fixed_delay -= correction
 
-        start_delay = middle_delay - REGION_SIZE
-        end_delay = middle_delay + REGION_SIZE
+        start_delay = fixed_delay - REGION_SIZE
+        end_delay = fixed_delay + REGION_SIZE
         desired_delays = np.linspace(start_delay, end_delay, self._iterations)
 
         # Optimal steps for the delays.
