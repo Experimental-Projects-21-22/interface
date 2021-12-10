@@ -7,7 +7,7 @@ from utils.delays import DelayLines
 
 MEASURE_TIME = 1
 
-WINDOW_SIZE = 11.5
+WINDOW_SIZE = 11.75
 REGION_SIZE = 4
 ITERATIONS = 2 * 4 * REGION_SIZE
 
@@ -110,9 +110,15 @@ class WindowShiftEffect(BaseScheme):
             logger.info(f"Window of length: {(window_right_delay - window_left_delay)[0]:.2f}ns.")
             logger.info(f"Window is centered around: {(window_left_delay + window_right_delay)[0] / 2:.2f}ns.")
 
-        plt.scatter(delay, counts1, label='Counts 1', marker='+', alpha=0.5)
-        plt.scatter(delay, counts2, label='Counts 2', marker='+', alpha=0.5)
-        plt.scatter(delay, coincidences, label='Coincidences', marker='x')
+        if np.all(counts1 == counts2):
+            plt.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])), fmt='.',
+                         label='Single Counts')
+        else:
+            plt.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])), fmt='.',
+                         label='Counts 1')
+            plt.errorbar(delay, counts2, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[1, :])), fmt='.',
+                         label='Counts 2')
+        plt.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
 
         for ldelay in window_left_delay:
             plt.axvline(ldelay, color='r', linestyle='--', alpha=0.5)

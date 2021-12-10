@@ -124,8 +124,8 @@ class DelayLines(Enum):
     def calculate_delays_std(self, steps):
         steps = validate_delay_steps(steps)
         return np.sqrt(
-            self._calibration()[1][0, self.index] * np.square(steps) +
-            self._calibration()[1][1, self.index]
+            self.delay_step_cov * np.square(steps) +
+            self.minimum_delay_cov
         )
 
     @overload
@@ -162,8 +162,22 @@ class DelayLines(Enum):
         return self._calibration()[0][1, self.index]
 
     @property
+    def minimum_delay_cov(self) -> float:
+        """
+        :return: the minimum delay cov in ns.
+        """
+        return self._calibration()[1][1, self.index]
+
+    @property
     def delay_step(self) -> float:
         """
         :return: the delay step in ns.
         """
         return self._calibration()[0][0, self.index]
+
+    @property
+    def delay_step_cov(self) -> float:
+        """
+        :return: the delay step cov in ns.
+        """
+        return self._calibration()[1][0, self.index]
