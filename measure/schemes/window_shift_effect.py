@@ -5,18 +5,18 @@ from matplotlib import pyplot as plt
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
 
+LOWER_DELAY_LIMIT = 20
+UPPER_DELAY_LIMIT = 80
+
 MEASURE_TIME = 1
 
-WINDOW_SIZE = 11.75
+WINDOW_SIZE = 12
 REGION_SIZE = 4
 ITERATIONS = 2 * 4 * REGION_SIZE
 
-COINCIDENCE_THRESHOLD = 0.05
+COINCIDENCE_THRESHOLD = 5e-4
 
-CORRECTION_FACTOR = 2.3
-
-LOWER_DELAY_LIMIT = 20
-UPPER_DELAY_LIMIT = 80
+CORRECTION_FACTOR = 5
 
 
 class WindowShiftEffect(BaseScheme):
@@ -105,10 +105,13 @@ class WindowShiftEffect(BaseScheme):
         no_coincidence_window = len(window_left_delay) == 0 or len(window_right_delay) == 0
         multiple_coincidence_windows = len(window_left_delay) > 1 and len(window_right_delay) > 1
         if multiple_coincidence_windows:
-            logger.info(f"Found {len(window_left_delay)} coincidence windows.")
+            logger.success(f"Found {len(window_left_delay)} coincidence windows.")
         elif not no_coincidence_window:
-            logger.info(f"Window of length: {(window_right_delay - window_left_delay)[0]:.2f}ns.")
-            logger.info(f"Window is centered around: {(window_left_delay + window_right_delay)[0] / 2:.2f}ns.")
+            logger.success(f"Window of length: {(window_right_delay - window_left_delay)[0]:.2f}ns.")
+            logger.success(f"Window is centered around: {(window_left_delay + window_right_delay)[0] / 2:.2f}ns.")
+
+        logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
+        logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
 
         if np.all(counts1 == counts2):
             plt.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])), fmt='.',
@@ -125,6 +128,7 @@ class WindowShiftEffect(BaseScheme):
         for rdelay in window_right_delay:
             plt.axvline(rdelay, color='r', linestyle='--', alpha=0.5)
 
+        plt.yscale('log')
         plt.ylabel('Counts')
         plt.xlabel('Delay between lines [ns]')
         plt.legend()

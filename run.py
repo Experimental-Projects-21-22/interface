@@ -1,5 +1,5 @@
 from interface import CoincidenceCircuit, Interferometer
-from measure.schemes.windowshifteffect import WindowShiftEffect
+from measure.schemes.window_shift_effect import WindowShiftEffect
 
 coincidence_circuit = CoincidenceCircuit(baudrate=115200, port='/dev/cu.usbmodem14301')
 interferometer = Interferometer(baudrate=115200, port='/dev/cu.usbmodem14301')
@@ -13,3 +13,6 @@ if __name__ == '__main__':
 
     data = scheme_B()
     scheme_B.analyse(data, scheme_B.metadata)
+    # scheme = SingleRun(coincidence_circuit=coincidence_circuit, interferometer=interferometer)
+    # data = scheme()
+    # scheme.analyse(data, scheme.metadata)
