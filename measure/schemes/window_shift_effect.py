@@ -1,6 +1,7 @@
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
+from scipy.optimize import curve_fit
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
@@ -14,9 +15,9 @@ WINDOW_SIZE = 12
 REGION_SIZE = 4
 ITERATIONS = 2 * 4 * REGION_SIZE
 
-COINCIDENCE_THRESHOLD = 5e-4
-
 CORRECTION_FACTOR = 5
+
+COINCIDENCE_THRESHOLD = 50
 
 
 class WindowShiftEffect(BaseScheme):
@@ -94,24 +95,24 @@ class WindowShiftEffect(BaseScheme):
         counts2 = data[3, :]
         coincidences = data[4, :]
 
-        # Approximate the coincidence window
-        mask = (coincidences > COINCIDENCE_THRESHOLD * counts1) & (coincidences > COINCIDENCE_THRESHOLD * counts2)
-        indices = np.asarray(np.where(mask[1:] != mask[:-1])).flatten()
-        window_left_indices = indices[::2]
-        window_right_indices = indices[1::2] + 1
-        window_left_delay = delay[window_left_indices]
-        window_right_delay = delay[window_right_indices]
+        def _normal(x: np.ndarray, factor: float, mean: float, std: float):
+            return factor * np.exp(-0.5 * ((x - mean) / std) ** 2)
 
-        no_coincidence_window = len(window_left_delay) == 0 or len(window_right_delay) == 0
-        multiple_coincidence_windows = len(window_left_delay) > 1 and len(window_right_delay) > 1
-        if multiple_coincidence_windows:
-            logger.success(f"Found {len(window_left_delay)} coincidence windows.")
-        elif not no_coincidence_window:
-            logger.success(f"Window of length: {(window_right_delay - window_left_delay)[0]:.2f}ns.")
-            logger.success(f"Window is centered around: {(window_left_delay + window_right_delay)[0] / 2:.2f}ns.")
+        def _func(x: np.ndarray, offset: float, factor: float, mean: float, std: float):
+            return offset + _normal(x, factor, mean, std)
+
+        # We want to perform a normal fit within the coincidence window and a constant fit outside.
+        window_mask = (coincidences >= COINCIDENCE_THRESHOLD)
+        # First perform a fit outside the window.
+        (offset,), _ = curve_fit(lambda x, a: a, delay[~window_mask], coincidences[~window_mask])
+        # Subtract the offset and apply a fit within the window.
+        (factor, mean, std), _ = curve_fit(_normal, delay[window_mask], coincidences[window_mask] - offset)
+        # We now have excellent estimates, so fit the whole thing.
+        (offset, factor, mean, std), _ = curve_fit(_func, delay, coincidences, p0=(offset, factor, mean, std))
 
         logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
         logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
+        logger.success(f"Fit parameters: {offset, factor, mean, std}")
 
         if np.all(counts1 == counts2):
             plt.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])), fmt='.',
@@ -122,11 +123,7 @@ class WindowShiftEffect(BaseScheme):
             plt.errorbar(delay, counts2, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[1, :])), fmt='.',
                          label='Counts 2')
         plt.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
-
-        for ldelay in window_left_delay:
-            plt.axvline(ldelay, color='r', linestyle='--', alpha=0.5)
-        for rdelay in window_right_delay:
-            plt.axvline(rdelay, color='r', linestyle='--', alpha=0.5)
+        plt.plot(delay, _func(delay, offset, factor, mean, std), label='Coincidences (fit)')
 
         plt.yscale('log')
         plt.ylabel('Counts')
