@@ -17,7 +17,7 @@ ITERATIONS = 2 * 4 * REGION_SIZE
 
 CORRECTION_FACTOR = 5
 
-COINCIDENCE_THRESHOLD = 50
+WINDOW_ESTIMATE = 1.1
 
 
 class WindowShiftEffect(BaseScheme):
@@ -95,24 +95,22 @@ class WindowShiftEffect(BaseScheme):
         counts2 = data[3, :]
         coincidences = data[4, :]
 
+        center_peak = delay[coincidences.argsort()[-1]]
+
         def _normal(x: np.ndarray, factor: float, mean: float, std: float):
             return factor * np.exp(-0.5 * ((x - mean) / std) ** 2)
 
-        def _func(x: np.ndarray, offset: float, factor: float, mean: float, std: float):
-            return offset + _normal(x, factor, mean, std)
+        def _func(x: np.ndarray, offset: float, window: float, factor: float, std: float):
+            square_window = ((center_peak - window <= x) * (x <= center_peak + window)).astype(int)
+            return offset + np.convolve(square_window, _normal(x, factor, 0, std), mode='same') / len(x)
 
-        # We want to perform a normal fit within the coincidence window and a constant fit outside.
-        window_mask = (coincidences >= COINCIDENCE_THRESHOLD)
-        # First perform a fit outside the window.
-        (offset,), _ = curve_fit(lambda x, a: a, delay[~window_mask], coincidences[~window_mask])
-        # Subtract the offset and apply a fit within the window.
-        (factor, mean, std), _ = curve_fit(_normal, delay[window_mask], coincidences[window_mask] - offset)
         # We now have excellent estimates, so fit the whole thing.
-        (offset, factor, mean, std), _ = curve_fit(_func, delay, coincidences, p0=(offset, factor, mean, std))
-
+        estimates = (10., WINDOW_ESTIMATE, 260., 0.8)
+        popt, _ = curve_fit(_func, delay, coincidences, p0=estimates)
         logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
         logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
-        logger.success(f"Fit parameters: {offset, factor, mean, std}")
+        logger.success(f"Center coincidence peak: {center_peak:.2f}")
+        logger.success(f"Fit parameters: {popt}")
 
         if np.all(counts1 == counts2):
             plt.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])), fmt='.',
@@ -123,7 +121,9 @@ class WindowShiftEffect(BaseScheme):
             plt.errorbar(delay, counts2, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[1, :])), fmt='.',
                          label='Counts 2')
         plt.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
-        plt.plot(delay, _func(delay, offset, factor, mean, std), label='Coincidences (fit)')
+
+        d = np.linspace(np.min(delay), np.max(delay), 1000)
+        plt.plot(d, _func(d, *popt), label='Coincidences (fit)')
 
         plt.yscale('log')
         plt.ylabel('Counts')
