@@ -12,10 +12,10 @@ UPPER_DELAY_LIMIT = 80
 MEASURE_TIME = 1
 
 WINDOW_SIZE = 12
-REGION_SIZE = 4
+REGION_SIZE = 15
 ITERATIONS = 2 * 4 * REGION_SIZE
 
-CORRECTION_FACTOR = 5
+CORRECTION_FACTOR = 0
 
 WINDOW_ESTIMATE = 1.1
 
@@ -79,14 +79,25 @@ class WindowShiftEffect(BaseScheme):
 
     @classmethod
     def analyse(cls, data, metadata):
+        fig, count_axis = plt.subplots()
+
+        count_axis.set_xlabel('Delay between lines [ns]')
+        coincidence_axis = count_axis.twinx()
+
+        count_axis.set_ylabel('Counts')
+        coincidence_axis.set_ylabel('Coincidences')
+
         if metadata['shift_A']:
-            plt.title("Window Shift Effect (A)")
+            title = "Window Shift Effect (A)"
             shift_line_C = DelayLines.CA
             fixed_line_C = DelayLines.CB
         else:
-            plt.title("Window Shift Effect (B)")
+            title = "Window Shift Effect (B)"
             shift_line_C = DelayLines.CB
             fixed_line_C = DelayLines.CA
+
+        plt.title(title + f"\n{metadata['window_size']} ns window, {metadata['correction_factor']} ns correction")
+
         fixed_delay = fixed_line_C.calculate_delays(metadata['fixed_delay_C'])
         delay = shift_line_C.calculate_delays(data[0, :]) - fixed_delay
         delay += metadata['correction_factor'] if metadata['shift_A'] else -metadata['correction_factor']
@@ -94,6 +105,9 @@ class WindowShiftEffect(BaseScheme):
         counts1 = data[2, :]
         counts2 = data[3, :]
         coincidences = data[4, :]
+
+        count_axis.set_ylim([0, np.max([counts1, counts2]) * 1.1])
+        coincidence_axis.set_ylim([0, 500])
 
         center_peak = delay[coincidences.argsort()[-1]]
 
@@ -112,21 +126,28 @@ class WindowShiftEffect(BaseScheme):
         logger.success(f"Center coincidence peak: {center_peak:.2f}")
         logger.success(f"Fit parameters: {popt}")
 
+        plots = []
         if np.all(counts1 == counts2):
-            plt.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])), fmt='.',
-                         label='Single Counts')
+            count_axis.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])),
+                                fmt='.', label='Single Counts')
         else:
-            plt.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])), fmt='.',
-                         label='Counts 1')
-            plt.errorbar(delay, counts2, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[1, :])), fmt='.',
-                         label='Counts 2')
-        plt.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
+            count_axis.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])),
+                                fmt='.', label='Counts 1')
+            count_axis.errorbar(delay, counts2, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[1, :])),
+                                fmt='.', label='Counts 2')
+        coincidence_axis.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
 
-        d = np.linspace(np.min(delay), np.max(delay), 1000)
-        plt.plot(d, _func(d, *popt), label='Coincidences (fit)')
+        # d = np.linspace(np.min(delay), np.max(delay), 1000)
+        # plt.plot(d, _func(d, *popt), label='Coincidences (fit)')
 
-        plt.yscale('log')
-        plt.ylabel('Counts')
-        plt.xlabel('Delay between lines [ns]')
-        plt.legend()
+        # plt.yscale('log')
+        # plt.ylabel('Counts')
+        # plt.xlabel('Delay between lines [ns]')
+
+        handles, labels = count_axis.get_legend_handles_labels()
+        handles += coincidence_axis.get_legend_handles_labels()[0]
+        labels += coincidence_axis.get_legend_handles_labels()[1]
+
+        plt.tight_layout()
+        plt.legend(handles, labels)
         plt.show()
