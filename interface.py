@@ -52,11 +52,13 @@ class Arduino(Serial):
 
     def __enter__(self: C) -> C:
         logger.info(f"Serial interface to the {self.name} is being opened.")
-        return super().__enter__()
+        super().__enter__()
+        return self
 
     def __exit__(self, *args, **kwargs):
         logger.info(f"Serial interface to the {self.name} is being closed.")
-        return super().__exit__(*args, **kwargs)
+        super().__exit__(*args, **kwargs)
+        return self
 
     def readline(self, **kwargs) -> str:
         """
