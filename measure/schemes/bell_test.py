@@ -3,13 +3,12 @@ import numpy as np
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
 import random
+import matplotlib.pyplot as plt
 
 MEASURE_TIME = 1
 
 WINDOW_SIZE = 12
 MEASUREMENTS_PER_ITERATION = 10
-
-CORRECTION_FACTOR = 0
 
 CA_STEPS = 39
 WA_STEPS = 88
@@ -46,20 +45,20 @@ def compute_E(N_pp_arr, N_mm_arr, N_pm_arr, N_mp_arr):
 
     return E, sigma_E
 
+
 class BellTest(BaseScheme):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, data_points=3, iterations=ITERATIONS, **kwargs)
+        super().__init__(*args, data_points=3, iterations=1, **kwargs)
         self.data: np.ndarray = np.zeros((ITERATIONS, 3, MEASUREMENTS_PER_ITERATION))
 
     @property
     def metadata(self) -> dict:
         metadata = super().metadata
         metadata.update({
-            'CA_STEPS':                     CA_STEPS,
-            'WA_STEPS':                     WA_STEPS,
-            'CB_STEPS':                     CB_STEPS,
-            'WB_STEPS':                     WB_STEPS,
-            'correction_factor':            CORRECTION_FACTOR,
+            'CA_steps':                     CA_STEPS,
+            'WA_steps':                     WA_STEPS,
+            'CB_steps':                     CB_STEPS,
+            'WB_steps':                     WB_STEPS,
             'measure_time':                 MEASURE_TIME,
             'measurements_per_iteration':   MEASUREMENTS_PER_ITERATION,
             'iterations':                   ITERATIONS,
@@ -74,20 +73,32 @@ class BellTest(BaseScheme):
         self.coincidence_circuit.set_delay(CB_STEPS, DelayLines.CB)
         self.coincidence_circuit.set_delay(WB_STEPS, DelayLines.WB)
 
-    def iteration(self, i):
-        for j in range(MEASUREMENTS_PER_ITERATION):
-            self.data[i, :, j] = self.coincidence_circuit.measure(MEASURE_TIME)
-            # self.data[i, :, j] = (random.random() * 1e6, random.random() * 1e6, random.random() * 1e6)
-        logger.info(f'For α = {ALPHA_ANGLES[i]}° and β = {BETA_ANGLES[i]}°:')
-        logger.info(f"Counter 1: {np.mean(self.data[i][0]):.1f} ± "
-                    f"{np.std(self.data[i][0]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
-        logger.info(f"Counter 2: {np.mean(self.data[i][1]):.1f} ± "
-                    f"{np.std(self.data[i][1]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
-        logger.info(f"Coincidences: {np.mean(self.data[i][2]):.1f} ± "
-                    f"{np.std(self.data[i][2]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
-        if i != ITERATIONS - 1:
-            logger.info(f'Press enter to continue with α = {ALPHA_ANGLES[i + 1]}° and β = {BETA_ANGLES[i + 1]}°')
-            input()
+    def iteration(self, _):
+        i = 0
+        i_old = 0
+        while i < ITERATIONS:
+            for j in range(MEASUREMENTS_PER_ITERATION):
+                # self.data[i, :, j] = self.coincidence_circuit.measure(MEASURE_TIME)
+                self.data[i, :, j] = (random.random() * 1e6, random.random() * 1e6, random.random() * 1e6)
+            logger.info(f'For α = {ALPHA_ANGLES[i]}° and β = {BETA_ANGLES[i]}°:')
+            logger.info(f"Counter 1: {np.mean(self.data[i][0]):.1f} ± "
+                        f"{np.std(self.data[i][0]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
+            logger.info(f"Counter 2: {np.mean(self.data[i][1]):.1f} ± "
+                        f"{np.std(self.data[i][1]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
+            logger.info(f"Coincidences: {np.mean(self.data[i][2]):.1f} ± "
+                        f"{np.std(self.data[i][2]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
+            if i < i_old:
+                i = i_old
+            if i != ITERATIONS - 1:
+                logger.info(f'Press enter to continue with α = {ALPHA_ANGLES[i + 1]}° and β = {BETA_ANGLES[i + 1]}°\n'
+                            f'If another iteration is desired, type this number followed by an enter instead')
+            else:
+                logger.info('If satisfied, press enter. Otherwise enter the iteration which you want to repeat')
+            choice = input()
+            if choice != '':
+                i_old = i
+                i = int(choice) - 1
+            i += 1
 
     @classmethod
     def analyse(cls, data, metadata):
@@ -120,3 +131,23 @@ class BellTest(BaseScheme):
             'S_weak':           S_weak,
             'sigma_S':          sigma_S
         })
+        angle_tuples = np.zeros(len(ALPHA_ANGLES), dtype='U40')
+        for i, alpha in enumerate(ALPHA_ANGLES):
+            angle_tuples[i] = f'{alpha, BETA_ANGLES[i]}'
+
+        x_position = np.arange(0, 2*len(ALPHA_ANGLES), 2)
+        titles = ['Counter 1', 'Counter 2', 'Coincidence counts']
+
+        for i in range(3):
+            fig, ax = plt.subplots()
+            fig.subplots_adjust(left=0.15, bottom=0.25)
+            ax.bar(x_position, np.mean(data[:, i], axis=1))
+            ax.set_xticks(x_position - 2)
+            ax.set_xticklabels(angle_tuples, rotation=45)
+            ax.set_title(titles[i] +
+                         f"\n CA steps = {metadata['CA_steps']}, WA steps = {metadata['WA_steps']}" +
+                         f"\n CB steps = {metadata['CB_steps']}, WB steps = {metadata['WB_steps']}")
+            ax.set_xlabel('($\\alpha,\\beta$)')
+            ax.set_ylabel('Counts')
+            fig.show()
+
