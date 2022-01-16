@@ -57,7 +57,8 @@ class BellTest(BaseScheme):
 
     def iteration(self, i):
         for j in range(MEASUREMENTS_PER_ITERATION):
-            self.data[:, i] = self.coincidence_circuit.measure(MEASURE_TIME)
+            self.data[i, :, j] = self.coincidence_circuit.measure(MEASURE_TIME)
+            # self.data[i, :, j] = (random.random() * 1e6, random.random() * 1e6, random.random() * 1e6)
         logger.info(f'For α = {ALPHA_ANGLES[i]}° and β = {BETA_ANGLES[i]}°:')
         logger.info(f"Counter 1: {np.mean(self.data[i][0]):.1f} ± "
                     f"{np.std(self.data[i][0]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
@@ -87,9 +88,12 @@ class BellTest(BaseScheme):
                                    np.mean(data[index, 2]) + np.mean(data[index_a_bot, 2])
                                    + np.mean(data[index_b_bot, 2]) + np.mean(data[index_bot, 2]))
 
-        S = E_matrix[0, 0] + E_matrix[1, 1] - E_matrix[0, 1] - E_matrix[1, 0]
-        logger.info(f'S = {S}')
+        S_strong = np.abs(E_matrix[0, 0] + E_matrix[1, 1] - E_matrix[0, 1] + E_matrix[1, 0])
+        S_weak = np.abs(E_matrix[0, 0] - E_matrix[0, 1]) + np.abs(E_matrix[1, 1] + E_matrix[1, 0])
+        logger.info(f'S_strong = {S_strong}')
+        logger.info(f'S_weak = {S_weak}')
         metadata.update({
             'E_matrix': E_matrix,
-            'S':        S
+            'S_strong': S_strong,
+            'S_weak':   S_weak
         })
