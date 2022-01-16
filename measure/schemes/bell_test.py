@@ -27,6 +27,25 @@ ITERATIONS = len(ALPHA_ANGLES)
 # ITERATIONS = 10
 
 
+def compute_E(N_pp_arr, N_mm_arr, N_pm_arr, N_mp_arr):
+    """" Computes E for a given configuration of counts
+    :param N_pp_arr: Array of values for N_++
+    :param N_mm_arr: Array of values for N_--
+    :param N_pm_arr: Array of values for N_+-
+    :param N_mp_arr: Array of values for N_-+
+    """
+    N_pp, sigma_pp = np.mean(N_pp_arr), np.std(N_pp_arr)/np.sqrt(len(N_pp_arr))
+    N_mm, sigma_mm = np.mean(N_mm_arr), np.std(N_mm_arr) / np.sqrt(len(N_mm_arr))
+    N_pm, sigma_pm = np.mean(N_pm_arr), np.std(N_pm_arr) / np.sqrt(len(N_pm_arr))
+    N_mp, sigma_mp = np.mean(N_mp_arr), np.std(N_mp_arr) / np.sqrt(len(N_mp_arr))
+
+    norm_factor = N_pp + N_mm + N_pm + N_mp
+    E = (N_pp + N_mm - N_pm - N_mp)/norm_factor
+    sigma_E = 2 * np.sqrt((N_pp + N_mm)**2 * (sigma_pm**2 + sigma_mp**2) + (N_pm + N_mp)**2 * (sigma_pp**2 + sigma_mm**2
+                                                                                               ))/(norm_factor**2)
+
+    return E, sigma_E
+
 class BellTest(BaseScheme):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, data_points=3, iterations=ITERATIONS, **kwargs)
@@ -36,16 +55,16 @@ class BellTest(BaseScheme):
     def metadata(self) -> dict:
         metadata = super().metadata
         metadata.update({
-            'CA_STEPS': CA_STEPS,
-            'WA_STEPS': WA_STEPS,
-            'CB_STEPS': CB_STEPS,
-            'WB_STEPS': WB_STEPS,
-            'correction_factor': CORRECTION_FACTOR,
-            'measure_time': MEASURE_TIME,
-            'measurements_per_iteration': MEASUREMENTS_PER_ITERATION,
-            'iterations': ITERATIONS,
-            'alpha_angles': ALPHA_ANGLES,
-            'beta_angles': BETA_ANGLES
+            'CA_STEPS':                     CA_STEPS,
+            'WA_STEPS':                     WA_STEPS,
+            'CB_STEPS':                     CB_STEPS,
+            'WB_STEPS':                     WB_STEPS,
+            'correction_factor':            CORRECTION_FACTOR,
+            'measure_time':                 MEASURE_TIME,
+            'measurements_per_iteration':   MEASUREMENTS_PER_ITERATION,
+            'iterations':                   ITERATIONS,
+            'alpha_angles':                 ALPHA_ANGLES,
+            'beta_angles':                  BETA_ANGLES
         })
         return metadata
 
@@ -73,6 +92,7 @@ class BellTest(BaseScheme):
     @classmethod
     def analyse(cls, data, metadata):
         E_matrix = np.zeros((2, 2))
+        sigma_E_matrix = np.zeros((2, 2))
         for i in range(2):
             a = A_ARRAY[i]
             a_bot = A_ARRAY[i + 2]
@@ -83,17 +103,20 @@ class BellTest(BaseScheme):
                 index_a_bot = np.where(np.logical_and(ALPHA_ANGLES == a_bot, BETA_ANGLES == b))
                 index_b_bot = np.where(np.logical_and(ALPHA_ANGLES == a, BETA_ANGLES == b))
                 index_bot = np.where(np.logical_and(ALPHA_ANGLES == a_bot, BETA_ANGLES == b_bot))
-                E_matrix[i, j] = (np.mean(data[index, 2]) - np.mean(data[index_a_bot, 2]) - np.mean(
-                                   data[index_b_bot, 2]) + np.mean(data[index_bot, 2])) / (
-                                   np.mean(data[index, 2]) + np.mean(data[index_a_bot, 2])
-                                   + np.mean(data[index_b_bot, 2]) + np.mean(data[index_bot, 2]))
+
+                E_matrix[i, j], sigma_E_matrix[i, j] = compute_E(data[index, 2], data[index_bot, 2],
+                                           data[index_a_bot, 2], data[index_b_bot, 2])
 
         S_strong = np.abs(E_matrix[0, 0] + E_matrix[1, 1] - E_matrix[0, 1] + E_matrix[1, 0])
         S_weak = np.abs(E_matrix[0, 0] - E_matrix[0, 1]) + np.abs(E_matrix[1, 1] + E_matrix[1, 0])
-        logger.info(f'S_strong = {S_strong}')
-        logger.info(f'S_weak = {S_weak}')
+        sigma_S = np.sqrt(np.sum(np.square(sigma_E_matrix)))
+
+        logger.info(f'S_strong = {S_strong} ± {sigma_S}')
+        logger.info(f'S_weak = {S_weak} ± {sigma_S}')
         metadata.update({
-            'E_matrix': E_matrix,
-            'S_strong': S_strong,
-            'S_weak':   S_weak
+            'E_matrix':         E_matrix,
+            'sigma_E_matrix':   sigma_E_matrix,
+            'S_strong':         S_strong,
+            'S_weak':           S_weak,
+            'sigma_S':          sigma_S
         })
