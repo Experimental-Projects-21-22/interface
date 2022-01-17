@@ -77,63 +77,61 @@ class WindowShiftEffect(BaseScheme):
         self.data[2:, i] = self.coincidence_circuit.measure(MEASURE_TIME)
 
     @classmethod
-    def analyse(cls, data, metadata):
+    def _plot_counts(cls, delay, counts1, counts2, coincidences, metadata):
         fig, count_axis = plt.subplots()
 
-        count_axis.set_xlabel('Delay between lines [ns]')
-        coincidence_axis = count_axis.twinx()
+        plt.title(f"Window Shift Effect ({'A' if metadata['shift_A'] else 'B'})\n"
+                  + f"{metadata['timestamp']}"
+                  )
 
+        # Create single count axis
+        count_axis.set_ylim([0, np.max([counts1, counts2]) * 1.1])
+        count_axis.set_xlabel('Delay between lines [ns]')
         count_axis.set_ylabel('Counts')
+
+        # Create coincidence count axis
+        coincidence_axis = count_axis.twinx()
         coincidence_axis.set_ylabel('Coincidences')
 
+        # Plot single counts
+        count_axis.scatter(delay, counts1, marker='.', label='Counts 1')
+        count_axis.scatter(delay, counts2, marker='.', label='Counts 2')
+        # Plot coincidences
+        coincidence_axis.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
+
+        # Create proper legend
+        handles, labels = count_axis.get_legend_handles_labels()
+        handles += coincidence_axis.get_legend_handles_labels()[0]
+        labels += coincidence_axis.get_legend_handles_labels()[1]
+        plt.legend(handles, labels)
+
+        plt.tight_layout()
+        plt.show()
+
+    @classmethod
+    def analyse(cls, data, metadata):
         if metadata['shift_A']:
-            title = "Window Shift Effect (A)"
             shift_line_C = DelayLines.CA
             fixed_line_C = DelayLines.CB
         else:
-            title = "Window Shift Effect (B)"
             shift_line_C = DelayLines.CB
             fixed_line_C = DelayLines.CA
 
-        plt.title(title + f"\n{metadata['window_size']} ns window, {metadata['correction_factor']} ns correction")
-
         fixed_delay = fixed_line_C.calculate_delays(metadata['fixed_delay_C'])
         delay = shift_line_C.calculate_delays(data[0, :]) - fixed_delay
-        delay += metadata['correction_factor'] if metadata['shift_A'] else -metadata['correction_factor']
-
-        delay_zero_idx = np.argmin(np.abs(delay))
-        print(metadata['fixed_delay_C'])
-        print(data[0][delay_zero_idx])
-        print(data[1][delay_zero_idx])
+        correction = metadata['correction_factor'] if metadata['shift_A'] else -metadata['correction_factor']
+        delay += correction
 
         counts1 = data[2, :]
         counts2 = data[3, :]
         coincidences = data[4, :]
-
-        count_axis.set_ylim([0, np.max([counts1, counts2]) * 1.1])
-        coincidence_axis.set_ylim([0, 300])
 
         center_peak = delay[coincidences.argsort()[-1]]
 
         # We now have excellent estimates, so fit the whole thing.
         logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
         logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
-        logger.success(f"Center coincidence peak: {center_peak:.2f}")
+        logger.success(f"Center coincidence peak: {center_peak:.2f} ns")
 
-        if np.all(counts1 == counts2):
-            count_axis.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])),
-                                fmt='.', label='Single Counts')
-        else:
-            count_axis.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])),
-                                fmt='.', label='Counts 1')
-            count_axis.errorbar(delay, counts2, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[1, :])),
-                                fmt='.', label='Counts 2')
-        coincidence_axis.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
-
-        handles, labels = count_axis.get_legend_handles_labels()
-        handles += coincidence_axis.get_legend_handles_labels()[0]
-        labels += coincidence_axis.get_legend_handles_labels()[1]
-
-        plt.tight_layout()
-        plt.legend(handles, labels)
-        plt.show()
+        # Plot the data.
+        cls._plot_counts(delay, counts1, counts2, coincidences, metadata)
