@@ -1,7 +1,6 @@
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
-from scipy.optimize import curve_fit
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
@@ -12,7 +11,7 @@ UPPER_DELAY_LIMIT = 80
 MEASURE_TIME = 1
 
 WINDOW_SIZE = 12
-REGION_SIZE = 15
+REGION_SIZE = 20
 ITERATIONS = 2 * 4 * REGION_SIZE
 
 CORRECTION_FACTOR = 0
@@ -102,31 +101,25 @@ class WindowShiftEffect(BaseScheme):
         delay = shift_line_C.calculate_delays(data[0, :]) - fixed_delay
         delay += metadata['correction_factor'] if metadata['shift_A'] else -metadata['correction_factor']
 
+        delay_zero_idx = np.argmin(np.abs(delay))
+        print(metadata['fixed_delay_C'])
+        print(data[0][delay_zero_idx])
+        print(data[1][delay_zero_idx])
+
         counts1 = data[2, :]
         counts2 = data[3, :]
         coincidences = data[4, :]
 
         count_axis.set_ylim([0, np.max([counts1, counts2]) * 1.1])
-        coincidence_axis.set_ylim([0, 500])
+        coincidence_axis.set_ylim([0, 300])
 
         center_peak = delay[coincidences.argsort()[-1]]
 
-        def _normal(x: np.ndarray, factor: float, mean: float, std: float):
-            return factor * np.exp(-0.5 * ((x - mean) / std) ** 2)
-
-        def _func(x: np.ndarray, offset: float, window: float, factor: float, std: float):
-            square_window = ((center_peak - window <= x) * (x <= center_peak + window)).astype(int)
-            return offset + np.convolve(square_window, _normal(x, factor, 0, std), mode='same') / len(x)
-
         # We now have excellent estimates, so fit the whole thing.
-        estimates = (10., WINDOW_ESTIMATE, 260., 0.8)
-        popt, _ = curve_fit(_func, delay, coincidences, p0=estimates)
         logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
         logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
         logger.success(f"Center coincidence peak: {center_peak:.2f}")
-        logger.success(f"Fit parameters: {popt}")
 
-        plots = []
         if np.all(counts1 == counts2):
             count_axis.errorbar(delay, counts1, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[0, :])),
                                 fmt='.', label='Single Counts')
@@ -136,13 +129,6 @@ class WindowShiftEffect(BaseScheme):
             count_axis.errorbar(delay, counts2, xerr=np.sqrt(shift_line_C.calculate_delays_std(data[1, :])),
                                 fmt='.', label='Counts 2')
         coincidence_axis.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
-
-        # d = np.linspace(np.min(delay), np.max(delay), 1000)
-        # plt.plot(d, _func(d, *popt), label='Coincidences (fit)')
-
-        # plt.yscale('log')
-        # plt.ylabel('Counts')
-        # plt.xlabel('Delay between lines [ns]')
 
         handles, labels = count_axis.get_legend_handles_labels()
         handles += coincidence_axis.get_legend_handles_labels()[0]
