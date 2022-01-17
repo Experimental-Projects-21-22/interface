@@ -1,6 +1,8 @@
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
+from scipy.optimize import curve_fit
+from scipy.special import erf
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
@@ -77,7 +79,7 @@ class WindowShiftEffect(BaseScheme):
         self.data[2:, i] = self.coincidence_circuit.measure(MEASURE_TIME)
 
     @classmethod
-    def _plot_counts(cls, delay, counts1, counts2, coincidences, metadata):
+    def _plot_counts(cls, delay, counts1, counts2, coincidences, popt, metadata):
         fig, count_axis = plt.subplots()
 
         plt.title(f"Window Shift Effect ({'A' if metadata['shift_A'] else 'B'})\n"
@@ -98,6 +100,7 @@ class WindowShiftEffect(BaseScheme):
         count_axis.scatter(delay, counts2, marker='.', label='Counts 2')
         # Plot coincidences
         coincidence_axis.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
+        coincidence_axis.plot(delay, cls._distribution(delay, *popt), label='Fit', c='r')
 
         # Create proper legend
         handles, labels = count_axis.get_legend_handles_labels()
@@ -107,6 +110,12 @@ class WindowShiftEffect(BaseScheme):
 
         plt.tight_layout()
         plt.show()
+
+    @staticmethod
+    def _distribution(delay: np.ndarray, location: float, scale: float, shape: float, offset: float,
+                      size: float) -> np.ndarray:
+        delay = (delay - location) / scale
+        return offset + size * np.exp(-delay ** 2 / 2) * (1 + erf(shape * delay / np.sqrt(2)))
 
     @classmethod
     def analyse(cls, data, metadata):
@@ -126,12 +135,12 @@ class WindowShiftEffect(BaseScheme):
         counts2 = data[3, :]
         coincidences = data[4, :]
 
-        center_peak = delay[coincidences.argsort()[-1]]
+        popt, pcov = curve_fit(cls._distribution, delay, coincidences, p0=(0, 1, 0, 150, 15000))
 
-        # We now have excellent estimates, so fit the whole thing.
+        logger.success(
+            f"Fit: location={popt[0]:.2e}, scale={popt[1]:.2e}, shape={popt[2]:.2e}, offset={popt[3]:.2e}, size={popt[4]:.2e}")
         logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
         logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
-        logger.success(f"Center coincidence peak: {center_peak:.2f} ns")
 
         # Plot the data.
-        cls._plot_counts(delay, counts1, counts2, coincidences, metadata)
+        cls._plot_counts(delay, counts1, counts2, coincidences, popt, metadata)
