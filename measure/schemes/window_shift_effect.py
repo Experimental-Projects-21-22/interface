@@ -2,7 +2,7 @@ import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.special import erf
+from scipy.special import gamma
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
@@ -17,8 +17,6 @@ REGION_SIZE = 20
 ITERATIONS = 2 * 4 * REGION_SIZE
 
 CORRECTION_FACTOR = 0
-
-WINDOW_ESTIMATE = 1.1
 
 
 class WindowShiftEffect(BaseScheme):
@@ -100,7 +98,10 @@ class WindowShiftEffect(BaseScheme):
         count_axis.scatter(delay, counts2, marker='.', label='Counts 2')
         # Plot coincidences
         coincidence_axis.scatter(delay, coincidences, label='Coincidences', marker='x', c='g')
-        coincidence_axis.plot(delay, cls._distribution(delay, *popt), label='Fit', c='r')
+
+        # Plot fit
+        fit_delay = np.arange(np.min(delay), np.max(delay), 0.1)
+        coincidence_axis.plot(fit_delay, cls._distribution(fit_delay, *popt), label='Fit', c='r')
 
         # Create proper legend
         handles, labels = count_axis.get_legend_handles_labels()
@@ -112,19 +113,15 @@ class WindowShiftEffect(BaseScheme):
         plt.show()
 
     @staticmethod
-    def _distribution(delay: np.ndarray, location: float, scale: float, shape: float, offset: float,
+    def _distribution(delay: np.ndarray, mu: float, alpha: float, beta: float, offset: float,
                       size: float) -> np.ndarray:
-        delay = (delay - location) / scale
-        return offset + size * np.exp(-delay ** 2 / 2) * (1 + erf(shape * delay / np.sqrt(2)))
+        # https://en.wikipedia.org/wiki/Generalized_normal_distribution
+        return offset + size * beta / (2 * alpha * gamma(1 / beta)) * np.exp(-(np.abs(delay - mu) / alpha) ** beta)
 
     @classmethod
     def analyse(cls, data, metadata):
-        if metadata['shift_A']:
-            shift_line_C = DelayLines.CA
-            fixed_line_C = DelayLines.CB
-        else:
-            shift_line_C = DelayLines.CB
-            fixed_line_C = DelayLines.CA
+        shift_line_C = DelayLines.CA if metadata['shift_A'] else DelayLines.CB
+        fixed_line_C = DelayLines.CB if metadata['shift_A'] else DelayLines.CA
 
         fixed_delay = fixed_line_C.calculate_delays(metadata['fixed_delay_C'])
         delay = shift_line_C.calculate_delays(data[0, :]) - fixed_delay
@@ -135,10 +132,11 @@ class WindowShiftEffect(BaseScheme):
         counts2 = data[3, :]
         coincidences = data[4, :]
 
-        popt, pcov = curve_fit(cls._distribution, delay, coincidences, p0=(0, 1, 0, 150, 15000))
+        p0 = (0, 1, 2, 150, 15000)
+        popt, _ = curve_fit(cls._distribution, delay, coincidences, p0=p0)
 
-        logger.success(
-            f"Fit: location={popt[0]:.2e}, scale={popt[1]:.2e}, shape={popt[2]:.2e}, offset={popt[3]:.2e}, size={popt[4]:.2e}")
+        logger.success(f"Fit parameters: {popt}")
+        logger.success(f"Mean: {popt[0]:.2e}, Variance: {popt[1] ** 2 * gamma(3 / popt[2]) / gamma(1 / popt[2]):.2e}")
         logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
         logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
 
