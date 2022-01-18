@@ -48,22 +48,37 @@ coincidence_circuit.set_delay(WA_steps, DelayLines.WA)
 coincidence_circuit.set_delay(CB_steps, DelayLines.CB)
 coincidence_circuit.set_delay(WB_steps, DelayLines.WB)
 
+counts_1_values = []
+counts_2_values = []
+counts_coinc_values = []
+
 
 def measure_rate():
     # Function that continuously measures the rate
 
     # Measure for 2 seconds
-    measurement = coincidence_circuit.measure(MEASURE_TIME)
+    measurement = coincidence_circuit.measure(1)
     # measurement = (random.random() * 1e6, random.random() * 1e6, random.random() * 1e6)
     # Split the measurements and convert to Hz
-    counts_1 = f'{measurement[0] / MEASURE_TIME:.2E} /s'
-    counts_2 = f'{measurement[1] / MEASURE_TIME:.2E} /s'
-    counts_coinc = f'{measurement[2] / MEASURE_TIME:.2E} /s'
 
-    # Update the labels
-    lab_1.config(text=counts_1)
-    lab_2.config(text=counts_2)
-    lab_coinc.config(text=counts_coinc)
+    global counts_1_values, counts_2_values, counts_coinc_values
+    counts_1_values.append(measurement[0])
+    counts_2_values.append(measurement[1])
+    counts_coinc_values.append(measurement[2])
+
+    if len(counts_1_values) > MEASURE_TIME:
+        counts_1_values.pop(0)
+        counts_2_values.pop(0)
+        counts_coinc_values.pop(0)
+    elif len(counts_1_values) == MEASURE_TIME:
+        counts_1 = f'{sum(counts_1_values) / MEASURE_TIME:.2E} /s'
+        counts_2 = f'{sum(counts_2_values) / MEASURE_TIME:.2E} /s'
+        counts_coinc = f'{sum(counts_coinc_values) / MEASURE_TIME:.2E} /s'
+
+        # Update the labels
+        lab_1.config(text=counts_1)
+        lab_2.config(text=counts_2)
+        lab_coinc.config(text=counts_coinc)
 
     root.after(1000, measure_rate)  # Runs itself again after 1000 milliseconds
 
