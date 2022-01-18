@@ -16,19 +16,22 @@ root = tk.Tk()
 tk.Label(root, text='Counter 1', font=font).grid(row=0, column=0)
 tk.Label(root, text='Counter 2', font=font).grid(row=1, column=0)
 tk.Label(root, text='Coincidences', font=font).grid(row=2, column=0)
+tk.Label(root, text='Relative coincidences', font=font).grid(row=3, column=0)
 lab_1 = tk.Label(root, font=font)
 lab_2 = tk.Label(root, font=font)
 lab_coinc = tk.Label(root, font=font)
+lab_rel = tk.Label(root, font=font)
 
 lab_1.grid(row=0, column=1)
 lab_2.grid(row=1, column=1)
 lab_coinc.grid(row=2, column=1)
+lab_rel.grid(row=3, column=1)
 
 # Set constant values for delaylines
 WINDOW_SIZE = 12
 fixed_delay = 24
 CORRECTION_FACTOR = 0
-MEASURE_TIME = 5
+MEASURE_TIME = 2
 
 # CA_steps = DelayLines.CA.calculate_steps(fixed_delay) + CORRECTION_FACTOR
 CA_steps = 37
@@ -70,17 +73,22 @@ def measure_rate():
         counts_1_values.pop(0)
         counts_2_values.pop(0)
         counts_coinc_values.pop(0)
-    elif len(counts_1_values) == MEASURE_TIME:
+
+    if len(counts_1_values) == MEASURE_TIME:
         counts_1 = f'{sum(counts_1_values) / MEASURE_TIME:.2E} /s'
         counts_2 = f'{sum(counts_2_values) / MEASURE_TIME:.2E} /s'
         counts_coinc = f'{sum(counts_coinc_values) / MEASURE_TIME:.2E} /s'
-
+        try:
+            relative = f'{MEASURE_TIME * sum(counts_coinc_values)/(sum(counts_1_values) * sum(counts_2_values)):.2E}'
+        except ZeroDivisionError:
+            relative = 'Division by zero'
         # Update the labels
         lab_1.config(text=counts_1)
         lab_2.config(text=counts_2)
         lab_coinc.config(text=counts_coinc)
+        lab_rel.config(text=relative)
+    root.after(5, measure_rate)  # Runs itself again after 1000 milliseconds
 
-    root.after(1000, measure_rate)  # Runs itself again after 1000 milliseconds
 
 
 time.sleep(1)
