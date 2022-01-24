@@ -1,6 +1,5 @@
 import tkinter as tk
 import random
-# from loguru import logger
 from interface import CoincidenceCircuit
 from utils.delays import DelayLines
 import time
@@ -98,6 +97,7 @@ def measure_rate():
         lab_2.config(text=counts_2)
         lab_coinc.config(text=counts_coinc)
         lab_rel.config(text=relative)
+    coincidence_circuit.reset_input_buffer()
     root.after(1000, measure_rate)  # Runs itself again after 1000 milliseconds
 
 
