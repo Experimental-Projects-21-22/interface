@@ -13,25 +13,19 @@ sys.setrecursionlimit(100000)
 # tkinter stuff
 font = ("Courier", 70)
 root = tk.Tk()
-tk.Label(root, text='Counter 1', font=font).grid(row=0, column=0)
-tk.Label(root, text='Counter 2', font=font).grid(row=1, column=0)
-tk.Label(root, text='Coincidences', font=font).grid(row=2, column=0)
-tk.Label(root, text='Relative coincidences', font=font).grid(row=3, column=0)
+
+
 lab_1 = tk.Label(root, font=font)
 lab_2 = tk.Label(root, font=font)
 lab_coinc = tk.Label(root, font=font)
 lab_rel = tk.Label(root, font=font)
 
-lab_1.grid(row=0, column=1)
-lab_2.grid(row=1, column=1)
-lab_coinc.grid(row=2, column=1)
-lab_rel.grid(row=3, column=1)
 
 # Set constant values for delaylines
 WINDOW_SIZE = 12
 fixed_delay = 24
 CORRECTION_FACTOR = 0
-MEASURE_TIME = 2
+MEASURE_TIME = 1
 
 # CA_steps = DelayLines.CA.calculate_steps(fixed_delay) + CORRECTION_FACTOR
 CA_steps = 37
@@ -44,6 +38,7 @@ WB_steps = 76
 # Load circuit
 coincidence_circuit = CoincidenceCircuit(baudrate=115200, port='/dev/tty.usbmodem142101')
 coincidence_circuit.__enter__()
+time.sleep(1)
 
 # Set the delays
 coincidence_circuit.set_delay(CA_steps, DelayLines.CA)
@@ -54,6 +49,22 @@ coincidence_circuit.set_delay(WB_steps, DelayLines.WB)
 counts_1_values = []
 counts_2_values = []
 counts_coinc_values = []
+
+
+def start_function():
+    start_button.destroy()
+
+    tk.Label(root, text='Counter 1', font=font).grid(row=0, column=0)
+    tk.Label(root, text='Counter 2', font=font).grid(row=1, column=0)
+    tk.Label(root, text='Coincidences', font=font).grid(row=2, column=0)
+    tk.Label(root, text='Relative coincidences', font=font).grid(row=3, column=0)
+
+    lab_1.grid(row=0, column=1)
+    lab_2.grid(row=1, column=1)
+    lab_coinc.grid(row=2, column=1)
+    lab_rel.grid(row=3, column=1)
+
+    measure_rate()
 
 
 def measure_rate():
@@ -87,12 +98,12 @@ def measure_rate():
         lab_2.config(text=counts_2)
         lab_coinc.config(text=counts_coinc)
         lab_rel.config(text=relative)
-    root.after(5, measure_rate)  # Runs itself again after 1000 milliseconds
+    root.after(1000, measure_rate)  # Runs itself again after 1000 milliseconds
 
 
-
+start_button = tk.Button(root, text='Start', font=font, command=start_function)
+start_button.pack()
 time.sleep(1)
 # start the loop
-measure_rate()
 
 root.mainloop()
