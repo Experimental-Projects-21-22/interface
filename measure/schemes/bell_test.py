@@ -16,8 +16,8 @@ CB_STEPS = 29
 WB_STEPS = 76
 
 ALPHA_ANGLES = 2 * np.array([-22.5, -22.5, -22.5, -22.5, 0, 0, 0, 0, 22.5, 22.5, 22.5, 22.5, 45, 45, 45, 45])
-BETA_ANGLES = 2 * np.array([-11.25, 11.25, 33.75, 56.25, -11.25, 11.25, 33.75, 56.25, -11.25, 11.25, 33.75, 56.25,
-                            -11.25, 11.25, 33.75, 56.25])
+BETA_ANGLES = 2 * np.array([-11.25, 11.25, 33.75, 56.25, 56.25, 33.75, 11.25, -11.25, -11.25, 11.25, 33.75, 56.25,
+                            56.25, 33.75, -11.25, 11.25])
 
 # ALPHA_ANGLES = np.zeros(19)
 # BETA_ANGLES = np.arange(0, 190, 10)
@@ -25,7 +25,6 @@ BETA_ANGLES = 2 * np.array([-11.25, 11.25, 33.75, 56.25, -11.25, 11.25, 33.75, 5
 
 A_ARRAY = np.unique(ALPHA_ANGLES)
 B_ARRAY = np.unique(BETA_ANGLES)
-
 ITERATIONS = len(ALPHA_ANGLES)
 # ITERATIONS = 10
 
@@ -44,7 +43,7 @@ def compute_E(N_pp_arr, N_mm_arr, N_pm_arr, N_mp_arr):
     :param N_pm_arr: Array of values for N_+-
     :param N_mp_arr: Array of values for N_-+
     """
-    N_pp, sigma_pp = np.mean(N_pp_arr), np.std(N_pp_arr)/np.sqrt(len(N_pp_arr))
+    N_pp, sigma_pp = np.mean(N_pp_arr), np.std(N_pp_arr) / np.sqrt(len(N_pp_arr))
     N_mm, sigma_mm = np.mean(N_mm_arr), np.std(N_mm_arr) / np.sqrt(len(N_mm_arr))
     N_pm, sigma_pm = np.mean(N_pm_arr), np.std(N_pm_arr) / np.sqrt(len(N_pm_arr))
     N_mp, sigma_mp = np.mean(N_mp_arr), np.std(N_mp_arr) / np.sqrt(len(N_mp_arr))
@@ -53,7 +52,6 @@ def compute_E(N_pp_arr, N_mm_arr, N_pm_arr, N_mp_arr):
     E = (N_pp + N_mm - N_pm - N_mp)/norm_factor
     sigma_E = 2 * np.sqrt((N_pp + N_mm)**2 * (sigma_pm**2 + sigma_mp**2) + (N_pm + N_mp)**2 * (sigma_pp**2 + sigma_mm**2
                                                                                                ))/(norm_factor**2)
-
     return E, sigma_E
 
 
@@ -87,12 +85,15 @@ class BellTest(BaseScheme):
     def iteration(self, _):
         i = 0
         i_old = 0
+        logger.info(f'To start with α = {angle_transform(ALPHA_ANGLES[0])}° and '
+                    f'β = {angle_transform(BETA_ANGLES[0], False)}°, press enter')
+        input()
         while i < ITERATIONS:
             for j in range(MEASUREMENTS_PER_ITERATION):
                 self.data[i, :, j] = self.coincidence_circuit.measure(MEASURE_TIME)
                 # self.data[i, :, j] = (random.random() * 1e6, random.random() * 1e6, random.random() * 1e6)
-            logger.info(f'For α = {angle_transform(ALPHA_ANGLES[i+1])}° and '
-                        f'β = {angle_transform(BETA_ANGLES[i + 1], False)}° ({i+1} out of {ITERATIONS}):')
+            logger.info(f'For α = {angle_transform(ALPHA_ANGLES[i])}° and '
+                        f'β = {angle_transform(BETA_ANGLES[i], False)}° ({i+1} out of {ITERATIONS}):')
             logger.info(f"Counter 1: {np.mean(self.data[i][0]):.1f} ± "
                         f"{np.std(self.data[i][0]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
             logger.info(f"Counter 2: {np.mean(self.data[i][1]):.1f} ± "
@@ -123,7 +124,7 @@ class BellTest(BaseScheme):
             a_bot = A_ARRAY[i + 2]
             for j in range(2):
                 b = B_ARRAY[j]
-                print((a, b), (i, j))
+                print((angle_transform(a), angle_transform(b, False)), (i, j))
                 b_bot = B_ARRAY[j + 2]
                 index = np.where(np.logical_and(ALPHA_ANGLES == a, BETA_ANGLES == b))
                 index_a_bot = np.where(np.logical_and(ALPHA_ANGLES == a_bot, BETA_ANGLES == b))
@@ -133,7 +134,7 @@ class BellTest(BaseScheme):
                 E_matrix[i, j], sigma_E_matrix[i, j] = compute_E(data[index, 2], data[index_bot, 2],
                                            data[index_a_bot, 2], data[index_b_bot, 2])
 
-        S_strong = np.abs(E_matrix[0, 0] + E_matrix[1, 1] - E_matrix[0, 1] + E_matrix[1, 0])
+        S_strong = np.abs(-E_matrix[0, 0] + E_matrix[1, 1]+ E_matrix[0, 1] + E_matrix[1, 0])
         S_weak = np.abs(E_matrix[0, 0] - E_matrix[0, 1]) + np.abs(E_matrix[1, 1] + E_matrix[1, 0])
         sigma_S = np.sqrt(np.sum(np.square(sigma_E_matrix)))
         print(E_matrix)
