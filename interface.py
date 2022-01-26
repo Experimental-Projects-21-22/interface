@@ -17,11 +17,15 @@ from loguru import logger
 from serial import Serial
 
 from utils.delays import DelayLines, validate_delay_steps
+from utils.steps import validate_interferometer_steps
 
 try:
     import ftd2xx as ftd
 except ImportError:
     logger.warning("FTD2XX library not found, do not use the CCD interface.")
+    ftd = None
+except OSError:
+    logger.warning("FTD2XX binaries not found, do not use the CCD interface.")
     ftd = None
 
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
@@ -171,7 +175,13 @@ class CoincidenceCircuit(Arduino):
 
 class Interferometer(Arduino):
     def __init__(self, *args, **kwargs):
+        logger.warning("Please turn OFF the stepper PSU! Press enter to continue.")
+        input()
+
         super().__init__(*args, name='interferometer', **kwargs)
+
+        logger.warning("Please turn ON the stepper PSU! Press enter to continue.")
+        input()
 
     def rotate(self, steps: int, delay: float = 1.0):
         """
@@ -180,6 +190,7 @@ class Interferometer(Arduino):
         :param steps: amount of steps to take.
         :param delay: the delay in s to wait after the command is sent.
         """
+        steps = validate_interferometer_steps(steps)
         self.send_command(steps)
         sleep(delay)
 
