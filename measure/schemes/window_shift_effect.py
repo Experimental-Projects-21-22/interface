@@ -2,7 +2,7 @@ import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.special import erf, gamma
+from scipy.special import erf
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
@@ -127,11 +127,10 @@ class WindowShiftEffect(BaseScheme):
         counts2 = data[C2_INDEX, :]
         coincidences = data[CO_INDEX, :]
 
-        p0 = (0, 1, 2, 150, 15000)
+        p0 = (np.min(coincidences), np.max(coincidences), 1, 0, (metadata['window_size'] - 11) * 2)
         popt, _ = curve_fit(cls._distribution, delay, coincidences, p0=p0)
 
         logger.success(f"Fit parameters: {popt}")
-        logger.success(f"Mean: {popt[0]:.2e}, Variance: {popt[1] ** 2 * gamma(3 / popt[2]) / gamma(1 / popt[2]):.2e}")
         logger.success(f"Mean counts on detector 1: {np.mean(counts1):.0f}")
         logger.success(f"Mean counts on detector 2: {np.mean(counts2):.0f}")
 
