@@ -2,7 +2,7 @@ import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.special import gamma
+from scipy.special import erf, gamma
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
@@ -109,10 +109,10 @@ class WindowShiftEffect(BaseScheme):
         plt.show()
 
     @staticmethod
-    def _distribution(delay: np.ndarray, mu: float, alpha: float, beta: float, offset: float,
-                      size: float) -> np.ndarray:
-        # https://en.wikipedia.org/wiki/Generalized_normal_distribution
-        return offset + size * beta / (2 * alpha * gamma(1 / beta)) * np.exp(-(np.abs(delay - mu) / alpha) ** beta)
+    def _distribution(delay: np.ndarray, Nd: float, N: float, sigma: float, delay_offset: float,
+                      window: float) -> np.ndarray:
+        return Nd + N / 2 * (erf((delay - delay_offset + window) / (np.sqrt(2 * np.pi) * sigma))
+                             - erf((delay - delay_offset - window) / (np.sqrt(2 * np.pi) * sigma)))
 
     @classmethod
     def analyse(cls, data, metadata):

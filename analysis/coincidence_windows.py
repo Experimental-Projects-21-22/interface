@@ -1,9 +1,7 @@
 import numpy as np
-from loguru import logger
 from matplotlib import pyplot as plt
 from numpy.lib.npyio import NpzFile
 from scipy.optimize import curve_fit
-from scipy.special import gamma
 
 from measure.schemes.window_shift_effect import WindowShiftEffect
 from utils.delays import DelayLines
@@ -25,8 +23,9 @@ files = [
     "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:47:45.npz",
 ]
 
-targeted_window_sizes = np.zeros((len(files),))
-variances = np.zeros((len(files),))
+targeted_window_sizes = np.zeros(len(files))
+fit_parameters = np.zeros((len(files), 5))
+fit_parameters_std = np.zeros((len(files), 5))
 
 for i, file in enumerate(files):
     # noinspection PyTypeChecker
@@ -34,8 +33,6 @@ for i, file in enumerate(files):
     # Retrieve the data and metadata.
     metadata = {key: file_contents[key] for key in file_contents.files if key != 'data'}
     data = file_contents['data']
-
-    targeted_window_sizes[i] = metadata['window_size']
 
     shift_line_C = DelayLines.CA if metadata['shift_A'] else DelayLines.CB
     fixed_line_C = DelayLines.CB if metadata['shift_A'] else DelayLines.CA
@@ -47,35 +44,49 @@ for i, file in enumerate(files):
     counts2 = data[3, :]
     coincidences = data[4, :]
 
-    p0 = (0, targeted_window_sizes[i] - 11, 1, 150, 15000)
-    popt, _ = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0)
-    variances[i] = popt[1] ** 2 * gamma(3 / popt[2]) / gamma(1 / popt[2])
+    targeted_window_sizes[i] = targeted_window_size = metadata['window_size']
 
-    plt.title(f"Targeted window size: {targeted_window_sizes[i]} ({2 * (targeted_window_sizes[i] - 11.15):.2f}) ns")
-    plt.grid()
-    plt.xlabel(f"Relative delay [ns]")
-    plt.ylabel(f"Coincidences")
-    plt.plot(delay, coincidences, '.')
-    plt.plot(np.arange(np.min(delay), np.max(delay), 0.1),
-             WindowShiftEffect._distribution(np.arange(np.min(delay), np.max(delay), 0.1), *popt))
+    p0 = (np.min(coincidences), np.max(coincidences), 1, 0, (targeted_window_size - 11) * 2)
+    fit_parameters[i], pcov = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0)
+    fit_parameters_std[i] = np.sqrt(np.diag(pcov))
+
+    # plt.title(f"Targeted window size: {targeted_window_size} ns")
+    # plt.grid()
+    # plt.xlabel(f"Relative delay [ns]")
+    # plt.ylabel(f"Coincidences")
+    # plt.plot(delay, coincidences, '.')
+    # plt.plot(np.arange(np.min(delay), np.max(delay), 0.1),
+    #          WindowShiftEffect._distribution(np.arange(np.min(delay), np.max(delay), 0.1), *fit_parameters[i]))
+    # plt.show()
+
+# Enlarge the STD of the window size, too small to see otherwise.
+fit_parameters_std[:, 4] *= 50
+
+labels = [
+    "$N_d$",
+    "$N$",
+    "$\\sigma$",
+    "$\\tau_0$",
+]
+for i in range(0, len(labels)):
+    plt.errorbar(fit_parameters[::2, 4], fit_parameters[::2, i],
+                 xerr=fit_parameters_std[::2, 4], yerr=fit_parameters_std[::2, 0],
+                 fmt='o', label='Shifting line A')
+    plt.errorbar(fit_parameters[1::2, 4], fit_parameters[1::2, i],
+                 xerr=fit_parameters_std[1::2, 4], yerr=fit_parameters_std[1::2, 0],
+                 fmt='o', label='Shifting line B')
+    plt.xlabel("Window size [ns]")
+    plt.ylabel(labels[i])
+    plt.legend()
     plt.show()
 
-
-def linear(x, a, b):
-    return a * x + b
-
-
-deviations = np.sqrt(variances)
-
-popt, _ = curve_fit(linear, targeted_window_sizes, deviations)
-logger.success(f"The exponential fit is: {popt}")
-logger.success(f"Minimum delay is: {-popt[1] / popt[0]:.2f}")
-
-plt.title("Targeted window Size vs. Deviation")
-plt.xlabel("Targeted window Size")
-plt.ylabel("Deviation")
-
-plt.plot(targeted_window_sizes, deviations, 'o', label="data")
-plt.plot(targeted_window_sizes, linear(targeted_window_sizes, *popt), label="fit")
-
+plt.errorbar(targeted_window_sizes[::2], fit_parameters[::2, 4],
+             yerr=fit_parameters_std[::2, 4],
+             fmt='o', label='Shifting line A')
+plt.errorbar(targeted_window_sizes[1::2], fit_parameters[1::2, 4],
+             yerr=fit_parameters_std[1::2, 4],
+             fmt='o', label='Shifting line B')
+plt.xlabel("Targeted window size [ns]")
+plt.ylabel("Window size [ns]")
+plt.legend()
 plt.show()
