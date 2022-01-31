@@ -1,4 +1,5 @@
 import numpy as np
+from loguru import logger
 from matplotlib import pyplot as plt
 from numpy.lib.npyio import NpzFile
 from scipy.optimize import curve_fit
@@ -47,46 +48,98 @@ for i, file in enumerate(files):
     targeted_window_sizes[i] = targeted_window_size = metadata['window_size']
 
     p0 = (np.min(coincidences), np.max(coincidences), 1, 0, (targeted_window_size - 11) * 2)
-    fit_parameters[i], pcov = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0)
+    fit_parameters[i], pcov = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0, maxfev=2000)
     fit_parameters_std[i] = np.sqrt(np.diag(pcov))
 
-    plt.title(f"Targeted window size: {targeted_window_size} ns")
-    plt.grid()
-    plt.xlabel(f"Relative delay [ns]")
-    plt.ylabel(f"Coincidences")
-    plt.plot(delay, coincidences, '.')
-    plt.plot(np.arange(np.min(delay), np.max(delay), 0.1),
-             WindowShiftEffect._distribution(np.arange(np.min(delay), np.max(delay), 0.1), *fit_parameters[i]))
-    plt.show()
+    # plt.title(f"Targeted window size: {targeted_window_size} ns")
+    # plt.grid()
+    # plt.xlabel(f"Relative delay [ns]")
+    # plt.ylabel(f"Coincidences")
+    # plt.plot(delay, coincidences, '.')
+    # plt.plot(np.arange(np.min(delay), np.max(delay), 0.1),
+    #          WindowShiftEffect._distribution(np.arange(np.min(delay), np.max(delay), 0.1), *fit_parameters[i]))
+    # plt.show()
 
-# Enlarge the STD of the window size, too small to see otherwise.
+# Take absolute values of window size / sigma.
+fit_parameters[:, 2] = np.abs(fit_parameters[:, 2])
+fit_parameters[:, 4] = np.abs(fit_parameters[:, 4])
+# Enlarge the STD of the window size/tau_0, too small to see otherwise.
+fit_parameters_std[:, 3] *= 10
 fit_parameters_std[:, 4] *= 50
 
+window_sizes = fit_parameters[:, 4]
+fit_window_sizes = np.arange(np.min(window_sizes), np.max(window_sizes), 0.1)
+
 labels = [
-    "$N_d$",
     "$N$",
     "$\\sigma$",
     "$\\tau_0$ [ns]",
 ]
-for i in range(0, len(labels)):
-    plt.errorbar(fit_parameters[::2, 4], fit_parameters[::2, i],
-                 xerr=fit_parameters_std[::2, 4], yerr=fit_parameters_std[::2, 0],
+for i, label in enumerate(labels, start=1):
+    plt.errorbar(window_sizes[::2], fit_parameters[::2, i],
+                 xerr=fit_parameters_std[::2, 4], yerr=fit_parameters_std[::2, i],
                  fmt='o', label='Shifting line A')
-    plt.errorbar(fit_parameters[1::2, 4], fit_parameters[1::2, i],
-                 xerr=fit_parameters_std[1::2, 4], yerr=fit_parameters_std[1::2, 0],
+    plt.errorbar(window_sizes[::2], fit_parameters[1::2, i],
+                 xerr=fit_parameters_std[1::2, 4], yerr=fit_parameters_std[1::2, i],
                  fmt='o', label='Shifting line B')
     plt.xlabel("Window size [ns]")
-    plt.ylabel(labels[i])
+    plt.ylabel(label)
     plt.legend()
     plt.show()
 
+function = lambda x, a, b: a * x + b
+popt, pcov = curve_fit(function, window_sizes, fit_parameters[:, 0])
+pstd = np.sqrt(np.diag(pcov))
+
+logger.info(f"Parameters for linear fit on N_d: {popt}")
+logger.info(f"STD for linear fit on N_d: {pstd}")
+plt.errorbar(window_sizes[::2], fit_parameters[::2, 0],
+             xerr=fit_parameters_std[::2, 4], yerr=fit_parameters_std[::2, 0],
+             fmt='o', label='Shifting line A')
+plt.errorbar(window_sizes[1::2], fit_parameters[1::2, 0],
+             xerr=fit_parameters_std[1::2, 4], yerr=fit_parameters_std[1::2, 0],
+             fmt='o', label='Shifting line B')
+plt.plot(fit_window_sizes, function(fit_window_sizes, *popt), label='Fit')
+plt.xlabel("Effective window size ($\\tau_w$) [ns]")
+plt.ylabel("$N_d$")
+plt.legend()
+plt.show()
+
+SNR = fit_parameters[:, 1] / fit_parameters[:, 0]
+function = lambda x, a, b: a / x + b
+popt, pcov = curve_fit(function, window_sizes, SNR)
+pstd = np.sqrt(np.diag(pcov))
+
+logger.info(f"Parameters for inverse fit on SNR: {popt}")
+logger.info(f"STD for inverse fit on SNR: {pstd}")
+plt.errorbar(window_sizes[::2], SNR[::2],
+             xerr=fit_parameters_std[::2, 4], yerr=np.sqrt(
+        (fit_parameters_std[::2, 0] / fit_parameters[::2, 1]) ** 2 + fit_parameters[::2, 1] / (
+                2 * fit_parameters_std[::2, 0] ** 2)),
+             fmt='o', label='Shifting line A')
+plt.errorbar(window_sizes[1::2], SNR[1::2],
+             xerr=fit_parameters_std[1::2, 4],
+             fmt='o', label='Shifting line B')
+plt.plot(fit_window_sizes, function(fit_window_sizes, *popt), label='Fit')
+plt.xlabel("Effective window size ($\\tau_w$) [ns]")
+plt.ylabel("SNR ($ N / N_d $)")
+plt.legend()
+plt.show()
+
+function = lambda x, a, b: a * x + b
+popt, pcov = curve_fit(function, targeted_window_sizes, fit_parameters[:, 4])
+pstd = np.sqrt(np.diag(pcov))
+
+logger.info(f"Parameters for linear fit on window size: {popt}")
+logger.info(f"STD for linear fit on window size: {pstd}")
 plt.errorbar(targeted_window_sizes[::2], fit_parameters[::2, 4],
              yerr=fit_parameters_std[::2, 4],
              fmt='o', label='Shifting line A')
 plt.errorbar(targeted_window_sizes[1::2], fit_parameters[1::2, 4],
              yerr=fit_parameters_std[1::2, 4],
              fmt='o', label='Shifting line B')
-plt.xlabel("Targeted window size [ns]")
+plt.plot(targeted_window_sizes, function(targeted_window_sizes, *popt), label='Fit')
+plt.xlabel("Targeted window size ($\\tau_t$) [ns]")
 plt.ylabel("Effective window size ($\\tau_w$) [ns]")
 plt.legend()
 plt.show()
