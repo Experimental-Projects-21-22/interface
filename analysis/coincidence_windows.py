@@ -50,14 +50,14 @@ for i, file in enumerate(files):
     fit_parameters[i], pcov = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0)
     fit_parameters_std[i] = np.sqrt(np.diag(pcov))
 
-    # plt.title(f"Targeted window size: {targeted_window_size} ns")
-    # plt.grid()
-    # plt.xlabel(f"Relative delay [ns]")
-    # plt.ylabel(f"Coincidences")
-    # plt.plot(delay, coincidences, '.')
-    # plt.plot(np.arange(np.min(delay), np.max(delay), 0.1),
-    #          WindowShiftEffect._distribution(np.arange(np.min(delay), np.max(delay), 0.1), *fit_parameters[i]))
-    # plt.show()
+    plt.title(f"Targeted window size: {targeted_window_size} ns")
+    plt.grid()
+    plt.xlabel(f"Relative delay [ns]")
+    plt.ylabel(f"Coincidences")
+    plt.plot(delay, coincidences, '.')
+    plt.plot(np.arange(np.min(delay), np.max(delay), 0.1),
+             WindowShiftEffect._distribution(np.arange(np.min(delay), np.max(delay), 0.1), *fit_parameters[i]))
+    plt.show()
 
 # Enlarge the STD of the window size, too small to see otherwise.
 fit_parameters_std[:, 4] *= 50
@@ -66,7 +66,7 @@ labels = [
     "$N_d$",
     "$N$",
     "$\\sigma$",
-    "$\\tau_0$",
+    "$\\tau_0$ [ns]",
 ]
 for i in range(0, len(labels)):
     plt.errorbar(fit_parameters[::2, 4], fit_parameters[::2, i],
@@ -87,6 +87,6 @@ plt.errorbar(targeted_window_sizes[1::2], fit_parameters[1::2, 4],
              yerr=fit_parameters_std[1::2, 4],
              fmt='o', label='Shifting line B')
 plt.xlabel("Targeted window size [ns]")
-plt.ylabel("Window size [ns]")
+plt.ylabel("Effective window size ($\\tau_w$) [ns]")
 plt.legend()
 plt.show()

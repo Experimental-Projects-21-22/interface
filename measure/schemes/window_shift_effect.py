@@ -111,8 +111,8 @@ class WindowShiftEffect(BaseScheme):
     @staticmethod
     def _distribution(delay: np.ndarray, Nd: float, N: float, sigma: float, delay_offset: float,
                       window: float) -> np.ndarray:
-        return Nd + N / 2 * (erf((delay - delay_offset + window) / (np.sqrt(2 * np.pi) * sigma))
-                             - erf((delay - delay_offset - window) / (np.sqrt(2 * np.pi) * sigma)))
+        return Nd + N / 2 * (erf((delay - delay_offset + window) / (np.sqrt(2) * sigma))
+                             - erf((delay - delay_offset - window) / (np.sqrt(2) * sigma)))
 
     @classmethod
     def analyse(cls, data, metadata):
