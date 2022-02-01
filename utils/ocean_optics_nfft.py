@@ -26,8 +26,8 @@ plt.ion()
 # Create the subplots
 fig = plt.figure(figsize=(10, 8))
 ax1 = fig.add_subplot(grid[0, 0])
-ax2 = fig.add_subplot(grid[1, 0])
-ax3 = fig.add_subplot(grid[:, 1])
+ax2 = fig.add_subplot(grid[0, 1])
+ax3 = fig.add_subplot(grid[1, :])
 
 # Draw plots for first loop
 line1 = ax1.scatter(np.arange(N // 2), np.zeros(N // 2), s=3)
@@ -50,7 +50,7 @@ ax2.set_yticklabels(['$-\pi$', '$-\pi$/2', '0', '$\pi$/2', '$\pi$', ])
 
 ax3.set_title("Measured intensity compared to base file")
 ax3.set_xlabel("Wavelength (nm)")
-ax3.set_ylabel("Relative intensity")
+ax3.set_ylabel("Intensity")
 
 plt.tight_layout()
 plt.show()
@@ -59,11 +59,20 @@ while True:
     intensities = spectrometer.intensities()
     wavelengths = spectrometer.wavelengths()
 
+    # Fixes a broken pixel?
+    intensities[1] = 0
+
     transform = nfft(wavelengths, intensities)
 
     line1.set_offsets(np.c_[np.arange(N // 2), np.abs(transform)])
     line2.set_offsets(np.c_[np.arange(N // 2), np.angle(transform)])
     line3.set_offsets(np.c_[wavelengths, intensities])
+
+    ax1.set_ylim(0, np.max(np.abs(transform)))
+    ax3.set_ylim(0, np.max(np.abs(transform)))
+
+    ax3.set_ylim(0, np.max(np.abs(intensities)))
+    ax3.set_xlim(np.min(wavelengths), np.max(wavelengths))
 
     # drawing updated values
     fig.canvas.draw()
