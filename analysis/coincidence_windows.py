@@ -76,13 +76,16 @@ labels = [
     "$\\tau_0$ [ns]",
 ]
 for i, label in enumerate(labels, start=1):
+    logger.info(f"Mean for {label}: {fit_parameters[:, i].mean()}")
+    logger.info(f"Mean (A) for {label}: {fit_parameters[::2, i].mean()}")
+    logger.info(f"Mean (B) for {label}: {fit_parameters[1::2, i].mean()}")
     plt.errorbar(window_sizes[::2], fit_parameters[::2, i],
                  xerr=fit_parameters_std[::2, 4], yerr=fit_parameters_std[::2, i],
                  fmt='o', label='Shifting line A')
     plt.errorbar(window_sizes[::2], fit_parameters[1::2, i],
                  xerr=fit_parameters_std[1::2, 4], yerr=fit_parameters_std[1::2, i],
                  fmt='o', label='Shifting line B')
-    plt.xlabel("Window size [ns]")
+    plt.xlabel("Window size ($\\tau_w$) [ns]")
     plt.ylabel(label)
     plt.legend()
     plt.show()
