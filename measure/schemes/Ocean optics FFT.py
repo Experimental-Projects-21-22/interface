@@ -104,7 +104,8 @@ plt.tight_layout()
 plt.show()
 print(np.max(freqs))
 # Loop
-for dL in Delta_L:
+
+while 1==1:
     # Measure new values
     if not RANDOM:
         intensity = spec.intensities()
