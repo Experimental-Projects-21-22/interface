@@ -38,14 +38,14 @@ class WindowShiftEffect(BaseScheme):
 
         if shift_A:
             self.data[CA_INDEX, :] = DelayLines.CA.calculate_steps(desired_delays)
-            self.data[WA_INDEX, :] = DelayLines.WA.calculate_steps(fixed_delay + WINDOW_SIZE)
+            self.data[WA_INDEX, :] = DelayLines.WA.calculate_steps(desired_delays + WINDOW_SIZE)
             self.data[CB_INDEX, :] = np.tile(DelayLines.CB.calculate_steps(fixed_delay), self._iterations)
             self.data[WB_INDEX, :] = np.tile(DelayLines.WB.calculate_steps(fixed_delay + WINDOW_SIZE), self._iterations)
         else:
             self.data[CA_INDEX, :] = np.tile(DelayLines.CA.calculate_steps(fixed_delay), self._iterations)
             self.data[WA_INDEX, :] = np.tile(DelayLines.WA.calculate_steps(fixed_delay + WINDOW_SIZE), self._iterations)
             self.data[CB_INDEX, :] = DelayLines.CB.calculate_steps(desired_delays)
-            self.data[WB_INDEX, :] = DelayLines.WB.calculate_steps(fixed_delay + WINDOW_SIZE)
+            self.data[WB_INDEX, :] = DelayLines.WB.calculate_steps(desired_delays + WINDOW_SIZE)
 
     @property
     def metadata(self) -> dict:
