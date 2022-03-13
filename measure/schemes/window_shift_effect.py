@@ -8,13 +8,14 @@ from measure.scheme import BaseScheme
 from utils.delays import DelayLines
 
 LOWER_DELAY_LIMIT = 20
-UPPER_DELAY_LIMIT = 80
+
 
 MEASURE_TIME = 1
 
 WINDOW_SIZE = 12
-REGION_SIZE = 20
+REGION_SIZE = 6
 ITERATIONS = 2 * 4 * REGION_SIZE
+
 
 CA_INDEX = 0
 WA_INDEX = 1
@@ -32,7 +33,9 @@ class WindowShiftEffect(BaseScheme):
 
         fixed_delay = LOWER_DELAY_LIMIT + REGION_SIZE
         start_delay = fixed_delay - REGION_SIZE
+        # start_delay = 16
         end_delay = fixed_delay + REGION_SIZE
+        # end_delay = 16
 
         desired_delays = np.linspace(start_delay, end_delay, self._iterations)
 
@@ -111,8 +114,8 @@ class WindowShiftEffect(BaseScheme):
     @staticmethod
     def _distribution(delay: np.ndarray, Nd: float, N: float, sigma: float, delay_offset: float,
                       window: float) -> np.ndarray:
-        return Nd + N / 2 * (erf((delay - delay_offset + window) / (np.sqrt(2) * sigma))
-                             - erf((delay - delay_offset - window) / (np.sqrt(2) * sigma)))
+        return Nd + N / 2 * (erf((delay - delay_offset + window) / (np.sqrt(2 * np.pi) * sigma))
+                             - erf((delay - delay_offset - window) / (np.sqrt(2 * np.pi) * sigma)))
 
     @classmethod
     def analyse(cls, data, metadata):

@@ -2,12 +2,10 @@ from loguru import logger
 import numpy as np
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
-import random
 import matplotlib.pyplot as plt
 
 MEASURE_TIME = 1
 
-WINDOW_SIZE = 12
 MEASUREMENTS_PER_ITERATION = 10
 
 CA_STEPS = 37
@@ -19,8 +17,8 @@ ALPHA_ANGLES = 2 * np.array([-22.5, -22.5, -22.5, -22.5, 0, 0, 0, 0, 22.5, 22.5,
 BETA_ANGLES = 2 * np.array([-11.25, 11.25, 33.75, 56.25, 56.25, 33.75, 11.25, -11.25, -11.25, 11.25, 33.75, 56.25,
                             56.25, 33.75, -11.25, 11.25])
 
-# ALPHA_ANGLES = np.zeros(19)
-# BETA_ANGLES = np.arange(0, 190, 10)
+ALPHA_ZERO = 68
+BETA_ZERO = 231
 
 
 A_ARRAY = np.unique(ALPHA_ANGLES)
@@ -31,9 +29,9 @@ ITERATIONS = len(ALPHA_ANGLES)
 
 def angle_transform(angle, alpha_bool=True):
     if alpha_bool:
-        return angle/2 + 68
+        return angle/2 + ALPHA_ZERO
     else:
-        return angle/2 + 231
+        return angle/2 + BETA_ZERO
 
 
 def compute_E(N_pp_arr, N_mm_arr, N_pm_arr, N_mp_arr):
@@ -91,7 +89,6 @@ class BellTest(BaseScheme):
         while i < ITERATIONS:
             for j in range(MEASUREMENTS_PER_ITERATION):
                 self.data[i, :, j] = self.coincidence_circuit.measure(MEASURE_TIME)
-                # self.data[i, :, j] = (random.random() * 1e6, random.random() * 1e6, random.random() * 1e6)
             logger.info(f'For α = {angle_transform(ALPHA_ANGLES[i])}° and '
                         f'β = {angle_transform(BETA_ANGLES[i], False)}° ({i+1} out of {ITERATIONS}):')
             logger.info(f"Counter 1: {np.mean(self.data[i][0]):.1f} ± "
@@ -137,16 +134,9 @@ class BellTest(BaseScheme):
         S_strong = np.abs(-E_matrix[0, 0] + E_matrix[1, 1]+ E_matrix[0, 1] + E_matrix[1, 0])
         S_weak = np.abs(E_matrix[0, 0] - E_matrix[0, 1]) + np.abs(E_matrix[1, 1] + E_matrix[1, 0])
         sigma_S = np.sqrt(np.sum(np.square(sigma_E_matrix)))
-        print(E_matrix)
+
         logger.info(f'S_strong = {S_strong} ± {sigma_S}')
         logger.info(f'S_weak = {S_weak} ± {sigma_S}')
-        # metadata.update({
-        #     'E_matrix':         E_matrix,
-        #     'sigma_E_matrix':   sigma_E_matrix,
-        #     'S_strong':         S_strong,
-        #     'S_weak':           S_weak,
-        #     'sigma_S':          sigma_S
-        # })
         angle_tuples = np.zeros(len(ALPHA_ANGLES), dtype='U40')
         for i, alpha in enumerate(ALPHA_ANGLES):
             angle_tuples[i] = f'{alpha, BETA_ANGLES[i]}'

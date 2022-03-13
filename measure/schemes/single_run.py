@@ -1,17 +1,16 @@
 from loguru import logger
+import numpy as np
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
 
-MEASURE_TIME = 2
+ITERATIONS = 10
+MEASURE_TIME = 1
 
-WINDOW_SIZE = 12
-ITERATIONS = 1
-
-CORRECTION_FACTOR = 2.3
-
-LOWER_DELAY_LIMIT = 20
-UPPER_DELAY_LIMIT = 80
+CA_steps = 61
+WA_steps = 110
+CB_steps = 37
+WB_steps = 83
 
 
 class SingleRun(BaseScheme):
@@ -22,28 +21,26 @@ class SingleRun(BaseScheme):
     def metadata(self) -> dict:
         metadata = super().metadata
         metadata.update({
-            'window_size':       WINDOW_SIZE,
-            'correction_factor': CORRECTION_FACTOR,
+            'CA_steps':          CA_steps,
+            'WA_steps':          WA_steps,
+            'CB_steps':          CB_steps,
+            'WB_steps':          WB_steps,
+            'iterations':        ITERATIONS,
             'measure_time':      MEASURE_TIME,
-            'lower_delay_limit': LOWER_DELAY_LIMIT,
         })
         return metadata
 
     def setup(self):
-        self.coincidence_circuit.set_delay(DelayLines.CA.calculate_steps(LOWER_DELAY_LIMIT), DelayLines.CA)
-        self.coincidence_circuit.set_delay(DelayLines.WA.calculate_steps(LOWER_DELAY_LIMIT + WINDOW_SIZE),
-                                           DelayLines.WA)
-
-        self.coincidence_circuit.set_delay(DelayLines.CB.calculate_steps(LOWER_DELAY_LIMIT - CORRECTION_FACTOR),
-                                           DelayLines.CB)
-        self.coincidence_circuit.set_delay(
-            DelayLines.WB.calculate_steps(LOWER_DELAY_LIMIT + WINDOW_SIZE - CORRECTION_FACTOR), DelayLines.WB)
+        self.coincidence_circuit.set_delay(CA_steps, DelayLines.CA)
+        self.coincidence_circuit.set_delay(WA_steps, DelayLines.WA)
+        self.coincidence_circuit.set_delay(CB_steps, DelayLines.CB)
+        self.coincidence_circuit.set_delay(WB_steps, DelayLines.WB)
 
     def iteration(self, i):
         self.data[:, i] = self.coincidence_circuit.measure(MEASURE_TIME)
 
     @classmethod
     def analyse(cls, data, metadata):
-        logger.info(f"Counts 1: {data[0][0]}")
-        logger.info(f"Counts 2: {data[1][0]}")
-        logger.info(f"Coincidences: {data[2][0]}")
+        logger.info(f"Counts 1: {np.mean(data[0])} ± {np.std(data[0])/np.sqrt(ITERATIONS)}")
+        logger.info(f"Counts 2: {np.mean(data[1])} ± {np.std(data[1])/np.sqrt(ITERATIONS)}")
+        logger.info(f"Coincidences: {np.mean(data[2])} ± {np.std(data[2])/np.sqrt(ITERATIONS)}")
