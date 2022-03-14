@@ -6,7 +6,7 @@ Written by:
     Douwe Remmelts <remmeltsdouwe@gmail.com>
     Bálint Bosman <b.bosman@umail.leidenuniv.nl>
 
-CCD interface code based on code previously written by Matthijs Rog.
+CCD interface code based on code previously written by Matthijs Rog <rog@physics.leidenuniv.nl>.
 """
 import re
 from time import sleep
@@ -28,6 +28,7 @@ except OSError:
     logger.warning("FTD2XX binaries not found, do not use the CCD interface.")
     ftd = None
 
+# Regex values are used to parse the output of the Arduino.
 COUNTER_REGEX = re.compile(r'(\d+),(\d+),(\d+)')
 DELAY_REGEX = re.compile(r'(\d+)')
 
@@ -52,8 +53,8 @@ class Arduino(Serial):
     def send_command(self, command):
         """
         Identical to the write method of Serial, however this method will automatically encode the data if it is a str
-        and explicitly appends a newline (\n) character if it is not present. This avoid that the Arduino can receive
-        two concatenated strings if commands are rapidly sent after each other.
+        and explicitly appends a newline character if it is not present. This avoids that the Arduino can receive two
+        concatenated strings if commands are rapidly sent after each other.
         """
         if not isinstance(command, str):
             logger.debug(f"Automatically converting command from {type(command).__name__} to str.")
@@ -87,7 +88,6 @@ class Arduino(Serial):
         message = super().readline(**kwargs)
         message = message.rstrip(self.ARDUINO_EOL).decode()
 
-        # logger.debug(f"Received the following data from the {self.name}: {message}.")
         return message
 
     def find_pattern(self, pattern: re.Pattern) -> re.Match:
@@ -175,6 +175,11 @@ class CoincidenceCircuit(Arduino):
 
 class Interferometer(Arduino):
     def __init__(self, *args, **kwargs):
+        """
+        There is a hardware issue where the stepper motor will turn and shake if it is powered on when initializing a
+        serial connection to the Arduino. By requiring the user to power off the motor before initializing the Arduino,
+        we can avoid this issue.
+        """
         logger.warning("Please turn OFF the stepper PSU! Press enter to continue.")
         input()
 
