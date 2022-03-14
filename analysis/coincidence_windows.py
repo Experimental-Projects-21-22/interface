@@ -48,7 +48,8 @@ for i, file in enumerate(files):
     targeted_window_sizes[i] = targeted_window_size = metadata['window_size']
 
     p0 = (np.min(coincidences), np.max(coincidences), 1, 0, (targeted_window_size - 11) * 2)
-    fit_parameters[i], pcov = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0, maxfev=2000)
+    popt, pcov = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0, maxfev=2000)
+    fit_parameters[i] = popt
     fit_parameters_std[i] = np.sqrt(np.diag(pcov))
 
     # plt.title(f"Targeted window size: {targeted_window_size} ns")
@@ -71,11 +72,13 @@ window_sizes = fit_parameters[:, 4]
 fit_window_sizes = np.arange(np.min(window_sizes), np.max(window_sizes), 0.1)
 
 labels = [
+    "$N_d$",
     "$N$",
     "$\\sigma$",
     "$\\tau_0$ [ns]",
+    "$\\tau_w$ [ns]",
 ]
-for i, label in enumerate(labels, start=1):
+for i, label in enumerate(labels):
     logger.info(f"Mean for {label}: {fit_parameters[:, i].mean()}")
     logger.info(f"Mean (A) for {label}: {fit_parameters[::2, i].mean()}")
     logger.info(f"Mean (B) for {label}: {fit_parameters[1::2, i].mean()}")
@@ -88,6 +91,12 @@ for i, label in enumerate(labels, start=1):
     plt.xlabel("Window size ($\\tau_w$) [ns]")
     plt.ylabel(label)
     plt.legend()
+
+    file_label = label.replace('$', '')
+    file_label = file_label.replace(' ', '_')
+    file_label = file_label.replace('\\', '')
+    plt.savefig(f"figures/{file_label}.pdf")
+
     plt.show()
 
 function = lambda x, a, b: a * x + b
@@ -106,6 +115,7 @@ plt.plot(fit_window_sizes, function(fit_window_sizes, *popt), label='Fit')
 plt.xlabel("Effective window size ($\\tau_w$) [ns]")
 plt.ylabel("$N_d$")
 plt.legend()
+plt.savefig("figures/fit_N_d.pdf")
 plt.show()
 
 SNR = fit_parameters[:, 1] / fit_parameters[:, 0]
@@ -127,6 +137,7 @@ plt.plot(fit_window_sizes, function(fit_window_sizes, *popt), label='Fit')
 plt.xlabel("Effective window size ($\\tau_w$) [ns]")
 plt.ylabel("SNR ($ N / N_d $)")
 plt.legend()
+plt.savefig("figures/fit_SNR.pdf")
 plt.show()
 
 function = lambda x, a, b: a * x + b
@@ -145,4 +156,5 @@ plt.plot(targeted_window_sizes, function(targeted_window_sizes, *popt), label='F
 plt.xlabel("Targeted window size ($\\tau_t$) [ns]")
 plt.ylabel("Effective window size ($\\tau_w$) [ns]")
 plt.legend()
+plt.savefig("figures/fit_window_size.pdf")
 plt.show()
