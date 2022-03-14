@@ -1,3 +1,9 @@
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+    Douwe Remmelts <remmeltsdouwe@gmail.com>
+"""
+
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
@@ -9,13 +15,11 @@ from utils.delays import DelayLines
 
 LOWER_DELAY_LIMIT = 20
 
-
 MEASURE_TIME = 1
 
 WINDOW_SIZE = 12
 REGION_SIZE = 6
 ITERATIONS = 2 * 4 * REGION_SIZE
-
 
 CA_INDEX = 0
 WA_INDEX = 1

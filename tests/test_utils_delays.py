@@ -1,3 +1,8 @@
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+"""
+
 from unittest import TestCase
 
 import numpy as np

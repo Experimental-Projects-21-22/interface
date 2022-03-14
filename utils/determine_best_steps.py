@@ -1,4 +1,10 @@
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+"""
+
 import numpy as np
+
 from utils.delays import DelayLines
 
 # Load the last/best file of the WindowShift
@@ -25,4 +31,4 @@ print(f'Optimal steps for {shift_C} = {data[0, index_max]}')
 print(f'Optimal steps for {shift_W} = {data[1, index_max]}')
 print(f'Optimal steps for {fixed_C} = {a["fixed_delay_C"]}')
 print(f'Optimal steps for {fixed_W} ='
-      f' {DelayLines.WB.calculate_steps(DelayLines.CB.calculate_delays(a["fixed_delay_C"])+ a["window_size"])}')
+      f' {DelayLines.WB.calculate_steps(DelayLines.CB.calculate_delays(a["fixed_delay_C"]) + a["window_size"])}')

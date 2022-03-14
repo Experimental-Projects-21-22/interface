@@ -1,3 +1,7 @@
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+"""
 from enum import Enum, auto
 from functools import lru_cache
 from typing import Tuple, overload

@@ -1,22 +1,22 @@
-import numpy as np
+"""
+Written by:
+    Douwe Remmelts <remmeltsdouwe@gmail.com>
+"""
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from matplotlib.patches import Ellipse
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-import matplotlib.lines as mlines
-from numpy.linalg import eig, inv
 
-angle_value = 0.399
+ANGLE_VALUE = 0.399
 
 
 def compute_fraction(max, min):
-    return (max - min)/(max + min)
+    return (max - min) / (max + min)
 
 
 def compute_angle(max1, max2, min1, min2):
     max2 = (max2 + np.pi) % (2 * np.pi)
-    min1 = (min1 + 3/2 * np.pi) % (2 * np.pi)
-    min2 = (min2 + 1/2 * np.pi) % (2 * np.pi)
+    min1 = (min1 + 3 / 2 * np.pi) % (2 * np.pi)
+    min2 = (min2 + 1 / 2 * np.pi) % (2 * np.pi)
     angle = np.mean((max1, max2, min1, min2))
 
     if angle > np.pi:
@@ -31,7 +31,6 @@ def create_label(ticks):
             labels.append(str(round(i, 1)))
         else:
             labels.append('')
-
     return labels
 
 
@@ -50,8 +49,8 @@ y = np.zeros(len(coords))
 for i, coord_tuple in enumerate(coords):
     x[i], y[i] = eval(coord_tuple)
 
-x *= angle_value
-y *= angle_value
+x *= ANGLE_VALUE
+y *= ANGLE_VALUE
 
 angle_min1 = np.deg2rad(data['angle minimum 1'] - 86)
 angle_min2 = np.deg2rad(data['angle minimum 2'] - 86)
@@ -79,21 +78,6 @@ for i in range(len(x)):
     dx[i] = polarisation_fraction[i] * np.cos(polarisation_angle[i])
     dy[i] = polarisation_fraction[i] * np.sin(polarisation_angle[i])
 
-
-# for i in range(len(x)):
-#    plt.arrow(x[i], y[i], )
-
-# for i in range(len(x)):
-#     plt.arrow(x[i], y[i], dx[i], dy[i], width=0.01)
-
-
-
-#
-# handles = []
-# labels = ['First minimum', 'Second minimum', 'First maximum', 'Second maximum']
-#
-# # ax.legend(handles=handles, bbox_to_anchor=(1.10, 1.10), loc='upper left')
-
 fig = plt.figure()
 ax = fig.add_subplot(111)
 
@@ -120,4 +104,3 @@ ax.set_aspect('equal')
 
 plt.savefig('4d gekloot.pdf', bbox_inches='tight')
 plt.show()
-

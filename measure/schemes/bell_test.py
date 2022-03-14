@@ -1,8 +1,13 @@
-from loguru import logger
+"""
+Written by:
+    Douwe Remmelts <remmeltsdouwe@gmail.com>
+"""
+import matplotlib.pyplot as plt
 import numpy as np
+from loguru import logger
+
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
-import matplotlib.pyplot as plt
 
 MEASURE_TIME = 1
 
@@ -20,18 +25,19 @@ BETA_ANGLES = 2 * np.array([-11.25, 11.25, 33.75, 56.25, 56.25, 33.75, 11.25, -1
 ALPHA_ZERO = 68
 BETA_ZERO = 231
 
-
 A_ARRAY = np.unique(ALPHA_ANGLES)
 B_ARRAY = np.unique(BETA_ANGLES)
 ITERATIONS = len(ALPHA_ANGLES)
+
+
 # ITERATIONS = 10
 
 
 def angle_transform(angle, alpha_bool=True):
     if alpha_bool:
-        return angle/2 + ALPHA_ZERO
+        return angle / 2 + ALPHA_ZERO
     else:
-        return angle/2 + BETA_ZERO
+        return angle / 2 + BETA_ZERO
 
 
 def compute_E(N_pp_arr, N_mm_arr, N_pm_arr, N_mp_arr):
@@ -47,9 +53,10 @@ def compute_E(N_pp_arr, N_mm_arr, N_pm_arr, N_mp_arr):
     N_mp, sigma_mp = np.mean(N_mp_arr), np.std(N_mp_arr) / np.sqrt(len(N_mp_arr))
 
     norm_factor = N_pp + N_mm + N_pm + N_mp
-    E = (N_pp + N_mm - N_pm - N_mp)/norm_factor
-    sigma_E = 2 * np.sqrt((N_pp + N_mm)**2 * (sigma_pm**2 + sigma_mp**2) + (N_pm + N_mp)**2 * (sigma_pp**2 + sigma_mm**2
-                                                                                               ))/(norm_factor**2)
+    E = (N_pp + N_mm - N_pm - N_mp) / norm_factor
+    sigma_E = 2 * np.sqrt(
+        (N_pp + N_mm) ** 2 * (sigma_pm ** 2 + sigma_mp ** 2) + (N_pm + N_mp) ** 2 * (sigma_pp ** 2 + sigma_mm ** 2
+                                                                                     )) / (norm_factor ** 2)
     return E, sigma_E
 
 
@@ -62,15 +69,15 @@ class BellTest(BaseScheme):
     def metadata(self) -> dict:
         metadata = super().metadata
         metadata.update({
-            'CA_steps':                     CA_STEPS,
-            'WA_steps':                     WA_STEPS,
-            'CB_steps':                     CB_STEPS,
-            'WB_steps':                     WB_STEPS,
-            'measure_time':                 MEASURE_TIME,
-            'measurements_per_iteration':   MEASUREMENTS_PER_ITERATION,
-            'iterations':                   ITERATIONS,
-            'alpha_angles':                 ALPHA_ANGLES,
-            'beta_angles':                  BETA_ANGLES
+            'CA_steps':                   CA_STEPS,
+            'WA_steps':                   WA_STEPS,
+            'CB_steps':                   CB_STEPS,
+            'WB_steps':                   WB_STEPS,
+            'measure_time':               MEASURE_TIME,
+            'measurements_per_iteration': MEASUREMENTS_PER_ITERATION,
+            'iterations':                 ITERATIONS,
+            'alpha_angles':               ALPHA_ANGLES,
+            'beta_angles':                BETA_ANGLES
         })
         return metadata
 
@@ -90,7 +97,7 @@ class BellTest(BaseScheme):
             for j in range(MEASUREMENTS_PER_ITERATION):
                 self.data[i, :, j] = self.coincidence_circuit.measure(MEASURE_TIME)
             logger.info(f'For α = {angle_transform(ALPHA_ANGLES[i])}° and '
-                        f'β = {angle_transform(BETA_ANGLES[i], False)}° ({i+1} out of {ITERATIONS}):')
+                        f'β = {angle_transform(BETA_ANGLES[i], False)}° ({i + 1} out of {ITERATIONS}):')
             logger.info(f"Counter 1: {np.mean(self.data[i][0]):.1f} ± "
                         f"{np.std(self.data[i][0]) / np.sqrt(MEASUREMENTS_PER_ITERATION):.1f}")
             logger.info(f"Counter 2: {np.mean(self.data[i][1]):.1f} ± "
@@ -100,9 +107,9 @@ class BellTest(BaseScheme):
             if i < i_old:
                 i = i_old
             if i != ITERATIONS - 1:
-                logger.info(f'Press enter to continue with α = {angle_transform(ALPHA_ANGLES[i+1])}° and'
+                logger.info(f'Press enter to continue with α = {angle_transform(ALPHA_ANGLES[i + 1])}° and'
                             f' β = {angle_transform(BETA_ANGLES[i + 1], False)}°'
-                            f' ({i+2} out of {ITERATIONS})\n'
+                            f' ({i + 2} out of {ITERATIONS})\n'
                             f'If another iteration is desired, type this number followed by an enter instead')
             else:
                 logger.info('If satisfied, press enter. Otherwise enter the iteration which you want to repeat')
@@ -129,9 +136,9 @@ class BellTest(BaseScheme):
                 index_bot = np.where(np.logical_and(ALPHA_ANGLES == a_bot, BETA_ANGLES == b_bot))
 
                 E_matrix[i, j], sigma_E_matrix[i, j] = compute_E(data[index, 2], data[index_bot, 2],
-                                           data[index_a_bot, 2], data[index_b_bot, 2])
+                                                                 data[index_a_bot, 2], data[index_b_bot, 2])
 
-        S_strong = np.abs(-E_matrix[0, 0] + E_matrix[1, 1]+ E_matrix[0, 1] + E_matrix[1, 0])
+        S_strong = np.abs(-E_matrix[0, 0] + E_matrix[1, 1] + E_matrix[0, 1] + E_matrix[1, 0])
         S_weak = np.abs(E_matrix[0, 0] - E_matrix[0, 1]) + np.abs(E_matrix[1, 1] + E_matrix[1, 0])
         sigma_S = np.sqrt(np.sum(np.square(sigma_E_matrix)))
 
@@ -141,7 +148,7 @@ class BellTest(BaseScheme):
         for i, alpha in enumerate(ALPHA_ANGLES):
             angle_tuples[i] = f'{alpha, BETA_ANGLES[i]}'
 
-        x_position = np.arange(0, 2*len(ALPHA_ANGLES), 2)
+        x_position = np.arange(0, 2 * len(ALPHA_ANGLES), 2)
         titles = ['Counter 1', 'Counter 2', 'Coincidence counts']
 
         for i in range(3):
@@ -156,4 +163,3 @@ class BellTest(BaseScheme):
             ax.set_xlabel('($\\alpha,\\beta$)')
             ax.set_ylabel('Counts')
             fig.show()
-

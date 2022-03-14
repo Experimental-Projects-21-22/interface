@@ -1,5 +1,11 @@
-from loguru import logger
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+    Douwe Remmelts <remmeltsdouwe@gmail.com>
+"""
+
 import numpy as np
+from loguru import logger
 
 from measure.scheme import BaseScheme
 from utils.delays import DelayLines
@@ -21,12 +27,12 @@ class SingleRun(BaseScheme):
     def metadata(self) -> dict:
         metadata = super().metadata
         metadata.update({
-            'CA_steps':          CA_steps,
-            'WA_steps':          WA_steps,
-            'CB_steps':          CB_steps,
-            'WB_steps':          WB_steps,
-            'iterations':        ITERATIONS,
-            'measure_time':      MEASURE_TIME,
+            'CA_steps':     CA_steps,
+            'WA_steps':     WA_steps,
+            'CB_steps':     CB_steps,
+            'WB_steps':     WB_steps,
+            'iterations':   ITERATIONS,
+            'measure_time': MEASURE_TIME,
         })
         return metadata
 
@@ -41,6 +47,6 @@ class SingleRun(BaseScheme):
 
     @classmethod
     def analyse(cls, data, metadata):
-        logger.info(f"Counts 1: {np.mean(data[0])} ± {np.std(data[0])/np.sqrt(ITERATIONS)}")
-        logger.info(f"Counts 2: {np.mean(data[1])} ± {np.std(data[1])/np.sqrt(ITERATIONS)}")
-        logger.info(f"Coincidences: {np.mean(data[2])} ± {np.std(data[2])/np.sqrt(ITERATIONS)}")
+        logger.info(f"Counts 1: {np.mean(data[0])} ± {np.std(data[0]) / np.sqrt(ITERATIONS)}")
+        logger.info(f"Counts 2: {np.mean(data[1])} ± {np.std(data[1]) / np.sqrt(ITERATIONS)}")
+        logger.info(f"Coincidences: {np.mean(data[2])} ± {np.std(data[2]) / np.sqrt(ITERATIONS)}")

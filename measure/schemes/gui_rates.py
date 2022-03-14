@@ -1,24 +1,27 @@
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+    Douwe Remmelts <remmeltsdouwe@gmail.com>
+"""
+
+import sys
+import time
 import tkinter as tk
-import random
+
 from interface import CoincidenceCircuit
 from utils.delays import DelayLines
-import time
 
 # Get around the max recursion depth
-import sys
-
 sys.setrecursionlimit(100000)
 
 # tkinter stuff
 font = ("Courier", 70)
 root = tk.Tk()
 
-
 lab_1 = tk.Label(root, font=font)
 lab_2 = tk.Label(root, font=font)
 lab_coinc = tk.Label(root, font=font)
 lab_rel = tk.Label(root, font=font)
-
 
 # Set constant values for delaylines
 WINDOW_SIZE = 12
@@ -35,7 +38,7 @@ CB_steps = 29
 WB_steps = 76
 
 # Load circuit
-coincidence_circuit = CoincidenceCircuit(baudrate=115200, port='/dev/tty.usbmodem142101')
+coincidence_circuit = CoincidenceCircuit(baudrate=115200, port='/dev/cu.usbmodem14301')
 coincidence_circuit.__enter__()
 time.sleep(1)
 
@@ -89,7 +92,7 @@ def measure_rate():
         counts_2 = f'{sum(counts_2_values) / MEASURE_TIME:.2E} /s'
         counts_coinc = f'{sum(counts_coinc_values) / MEASURE_TIME:.2E} /s'
         try:
-            relative = f'{MEASURE_TIME * sum(counts_coinc_values)/(sum(counts_1_values) * sum(counts_2_values)):.2E}'
+            relative = f'{MEASURE_TIME * sum(counts_coinc_values) / (sum(counts_1_values) * sum(counts_2_values)):.2E}'
         except ZeroDivisionError:
             relative = 'Division by zero'
         # Update the labels

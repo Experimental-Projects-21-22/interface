@@ -1,3 +1,12 @@
+"""
+This file contains all the code to load, analyze and plot the data from the various WindowShiftEffect measurements we
+performed. It will also fit some parameters of theoretical models to the data.
+
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+    Douwe Remmelts <remmeltsdouwe@gmail.com>
+"""
+
 import numpy as np
 from loguru import logger
 from matplotlib import pyplot as plt
@@ -7,28 +16,29 @@ from scipy.optimize import curve_fit
 from measure.schemes.window_shift_effect import WindowShiftEffect
 from utils.delays import DelayLines
 
-files = [
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:18:22.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:20:26.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:22:58.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:25:02.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:27:25.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:29:29.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:31:45.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:33:49.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:36:17.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:38:21.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:41:20.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:43:23.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:45:42.npz",
-    "/Users/julian/PycharmProjects/interface/data/WindowShiftEffect/2022-01-18-17:47:45.npz",
+DATA_DIRECTORY = "data/WindowShiftEffect/"
+FILES = [
+    DATA_DIRECTORY + "2022-01-18-17:18:22.npz",
+    DATA_DIRECTORY + "2022-01-18-17:20:26.npz",
+    DATA_DIRECTORY + "2022-01-18-17:22:58.npz",
+    DATA_DIRECTORY + "2022-01-18-17:25:02.npz",
+    DATA_DIRECTORY + "2022-01-18-17:27:25.npz",
+    DATA_DIRECTORY + "2022-01-18-17:29:29.npz",
+    DATA_DIRECTORY + "2022-01-18-17:31:45.npz",
+    DATA_DIRECTORY + "2022-01-18-17:33:49.npz",
+    DATA_DIRECTORY + "2022-01-18-17:36:17.npz",
+    DATA_DIRECTORY + "2022-01-18-17:38:21.npz",
+    DATA_DIRECTORY + "2022-01-18-17:41:20.npz",
+    DATA_DIRECTORY + "2022-01-18-17:43:23.npz",
+    DATA_DIRECTORY + "2022-01-18-17:45:42.npz",
+    DATA_DIRECTORY + "2022-01-18-17:47:45.npz",
 ]
 
-targeted_window_sizes = np.zeros(len(files))
-fit_parameters = np.zeros((len(files), 5))
-fit_parameters_std = np.zeros((len(files), 5))
+targeted_window_sizes = np.zeros(len(FILES))
+fit_parameters = np.zeros((len(FILES), 5))
+fit_parameters_std = np.zeros((len(FILES), 5))
 
-for i, file in enumerate(files):
+for i, file in enumerate(FILES):
     # noinspection PyTypeChecker
     file_contents: NpzFile = np.load(file)
     # Retrieve the data and metadata.
@@ -51,15 +61,6 @@ for i, file in enumerate(files):
     popt, pcov = curve_fit(WindowShiftEffect._distribution, delay, coincidences, p0=p0, maxfev=2000)
     fit_parameters[i] = popt
     fit_parameters_std[i] = np.sqrt(np.diag(pcov))
-
-    # plt.title(f"Targeted window size: {targeted_window_size} ns")
-    # plt.grid()
-    # plt.xlabel(f"Relative delay [ns]")
-    # plt.ylabel(f"Coincidences")
-    # plt.plot(delay, coincidences, '.')
-    # plt.plot(np.arange(np.min(delay), np.max(delay), 0.1),
-    #          WindowShiftEffect._distribution(np.arange(np.min(delay), np.max(delay), 0.1), *fit_parameters[i]))
-    # plt.show()
 
 # Take absolute values of window size / sigma.
 fit_parameters[:, 2] = np.abs(fit_parameters[:, 2])

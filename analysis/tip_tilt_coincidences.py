@@ -1,6 +1,10 @@
-import numpy as np
-from scipy.interpolate import griddata
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+"""
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.colors import LogNorm
 
 angle_value = 0.399
@@ -85,4 +89,3 @@ plt.grid(alpha=.4)
 plt.legend()
 plt.savefig('tip_tilt_coincidences.pdf')
 plt.show()
-

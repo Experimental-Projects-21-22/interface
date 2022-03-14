@@ -1,7 +1,13 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
+"""
+Written by:
+    Douwe Remmelts <remmeltsdouwe@gmail.com>
+"""
 from os import listdir
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+
 from measure.schemes.window_shift_effect import WindowShiftEffect
 from utils.delays import DelayLines
 
@@ -24,7 +30,6 @@ actual_window = np.zeros(len(files))
 Nd_fit = np.zeros(len(files))
 Nd_theory = np.zeros(len(files))
 
-
 SIN_LABELS = ['f', 'phi', 'A', 'b', 'alpha']
 parameters = np.zeros((len(files), len(SIN_LABELS)))
 errors = np.zeros((len(files), len(SIN_LABELS)))
@@ -36,7 +41,6 @@ for i, file in enumerate(files):
     data = metadata['data']
     coincidences = data[4]
     targeted_window_size = metadata['window_size']
-
 
     shift_line_C = DelayLines.CA if metadata['shift_A'] else DelayLines.CB
     fixed_line_C = DelayLines.CB if metadata['shift_A'] else DelayLines.CA
@@ -60,7 +64,6 @@ for i, file in enumerate(files):
         pcov = np.empty((len(p0), len(p0)))
         pcov[:] = np.nan
         succes = False
-
 
     lin = np.linspace(delay[0], delay[-1], 500)
     counts1 = data[2]
@@ -105,10 +108,9 @@ for i, file in enumerate(files):
         # plt.savefig('Sinc_example.pdf')
         # plt.show()
         plt.clf()
-        res = coincidences-fit_func(delay, *popt)
+        res = coincidences - fit_func(delay, *popt)
 
-
-        p0 = [1/5, -np.pi/2, np.max(res), np.mean(res), 0]
+        p0 = [1 / 5, -np.pi / 2, np.max(res), np.mean(res), 0]
 
         mask_parameter = 2.25 * np.std(res)
         fit_mask = np.abs(res) <= mask_parameter
@@ -122,8 +124,6 @@ for i, file in enumerate(files):
         print(f'For {file}:')
         for i, value in enumerate(popt_sin):
             print(f'{SIN_LABELS[i]} = {value} ± {errors_sin[i]}')
-
-
 
         plt.plot(delay, res, '-o')
         plt.plot(lin, sin_fit(lin, *popt_sin))
@@ -149,5 +149,5 @@ for i, file in enumerate(files):
     # Nd_fit[i] = popt[0]
     # Nd_theory[i] = np.mean(counts1) * np.mean(counts2) * popt[-1] * 2e-9
 
-print(np.nanmean(parameters, axis=0), np.nanmean(errors, axis=0)/np.sqrt(len(files)))
+print(np.nanmean(parameters, axis=0), np.nanmean(errors, axis=0) / np.sqrt(len(files)))
 print(np.nanstd(parameters, axis=0))

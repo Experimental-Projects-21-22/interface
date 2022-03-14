@@ -1,3 +1,7 @@
+"""
+Written by:
+    Julian van Doorn <j.c.b.van.doorn@umail.leidenuniv.nl>
+"""
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
