@@ -574,19 +574,19 @@ data/*
 
 !/data/WindowShiftEffect/
 data/WindowShiftEffect/*
-!/data/WindowShiftEffect/2022-01-18-17:18:22.npz
-!/data/WindowShiftEffect/2022-01-18-17:20:26.npz
-!/data/WindowShiftEffect/2022-01-18-17:22:58.npz
-!/data/WindowShiftEffect/2022-01-18-17:25:02.npz
-!/data/WindowShiftEffect/2022-01-18-17:27:25.npz
-!/data/WindowShiftEffect/2022-01-18-17:29:29.npz
-!/data/WindowShiftEffect/2022-01-18-17:31:45.npz
-!/data/WindowShiftEffect/2022-01-18-17:33:49.npz
-!/data/WindowShiftEffect/2022-01-18-17:36:17.npz
-!/data/WindowShiftEffect/2022-01-18-17:38:21.npz
-!/data/WindowShiftEffect/2022-01-18-17:41:20.npz
-!/data/WindowShiftEffect/2022-01-18-17:43:23.npz
-!/data/WindowShiftEffect/2022-01-18-17:45:42.npz
-!/data/WindowShiftEffect/2022-01-18-17:47:45.npz
+!/data/WindowShiftEffect/2022-01-18-17_18_22.npz
+!/data/WindowShiftEffect/2022-01-18-17_20_26.npz
+!/data/WindowShiftEffect/2022-01-18-17_22_58.npz
+!/data/WindowShiftEffect/2022-01-18-17_25_02.npz
+!/data/WindowShiftEffect/2022-01-18-17_27_25.npz
+!/data/WindowShiftEffect/2022-01-18-17_29_29.npz
+!/data/WindowShiftEffect/2022-01-18-17_31_45.npz
+!/data/WindowShiftEffect/2022-01-18-17_33_49.npz
+!/data/WindowShiftEffect/2022-01-18-17_36_17.npz
+!/data/WindowShiftEffect/2022-01-18-17_38_21.npz
+!/data/WindowShiftEffect/2022-01-18-17_41_20.npz
+!/data/WindowShiftEffect/2022-01-18-17_43_23.npz
+!/data/WindowShiftEffect/2022-01-18-17_45_42.npz
+!/data/WindowShiftEffect/2022-01-18-17_47_45.npz
 
 *.pdf
